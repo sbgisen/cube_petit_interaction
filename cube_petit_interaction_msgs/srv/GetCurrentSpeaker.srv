@@ -1,0 +1,5 @@
+# GetCurrentSpeaker.srv
+---
+string user_id
+float32 confidence
+bool is_new

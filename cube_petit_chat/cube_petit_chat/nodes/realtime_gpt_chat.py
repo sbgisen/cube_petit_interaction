@@ -25,6 +25,7 @@ import threading
 from typing import Optional
 
 from audio_common_msgs.msg import AudioDataStamped
+from audio_common_msgs.msg import AudioInfo
 from cube_petit_chat_msgs.msg import RealtimeState
 import numpy
 import rclpy
@@ -114,6 +115,18 @@ class RealtimeGPTChat(Node):
         self.channels = 1
         self.chunk = 2400
         self.audio_data = None
+
+        self._recording_speech: bool = False
+        self._speech_pcm_buffer = bytearray()
+        self.audio_stamped_publisher = self.create_publisher(AudioDataStamped, 'realtime_audio_stamped', 10)
+        self.audio_info_publisher = self.create_publisher(AudioInfo, 'realtime_audio_info', 10)
+        self.audio_info_msg = AudioInfo()
+        self.audio_info_msg.channels = self.channels
+        self.audio_info_msg.sample_rate = 24000
+        self.audio_info_msg.sample_format = 'S16LE'
+        self.audio_info_msg.bitrate = 24000 * 16 * 1
+        self.audio_info_msg.coding_format = 'PCM'
+        self.audio_data_msg = AudioDataStamped()
 
         self._waiting_status_timer: Optional[rclpy.timer.Timer] = None
         self._start_waiting_timer()
@@ -257,7 +270,7 @@ class RealtimeGPTChat(Node):
         await self._websocket_ref.send(json.dumps(message))
 
     def publish_realtime_status(self) -> None:
-        """[TODO] Comment."""
+        """Comment."""
         self.status_publisher.publish(self.status_msg)
 
     def save_to_history(self, role: str, content: str) -> None:
@@ -371,6 +384,8 @@ class RealtimeGPTChat(Node):
             audio_data = await asyncio.get_event_loop().run_in_executor(None, self.audio_send_queue.get)
             if audio_data is None:
                 continue
+            if self._recording_speech:
+                self._speech_pcm_buffer.extend(audio_data)
             base64_audio = base64.b64encode(audio_data).decode('utf-8')
             audio_event = {'type': 'input_audio_buffer.append', 'audio': base64_audio}
             await websocket.send(json.dumps(audio_event))
@@ -394,16 +409,33 @@ class RealtimeGPTChat(Node):
 
                     response_data = json.loads(response)
                     response_type = response_data.get('type')
+                    self.get_logger().info(response)
                     # Display the server response in real-time
                     if response_type == 'response.function_call_arguments.done':
                         name = response_data.get('name')
                         call_id = response_data.get('call_id')
                         args = response_data.get('arguments', '{}')
                         self.get_logger().info(f'Function call: {name}({args})')
+                        if 'memory' in name:
+                            if self.audio_data_msg is None or len(self.audio_data_msg.audio.data) == 0:
+                                self.get_logger().warn('No audio data available to publish')
+                                return
+                            self.audio_info_publisher.publish(self.audio_info_msg)
+                            self.audio_stamped_publisher.publish(self.audio_data_msg)
+                            self.get_logger().info(
+                                f'Published AudioDataStamped (bytes={len(self._speech_pcm_buffer)})')
+                            self._speech_pcm_buffer.clear()
 
                         if hasattr(self, 'tool_functions') and name in self.tool_functions:
                             try:
-                                result = await self.tool_functions[name](args)
+                                raw_args = response_data.get('arguments', '{}')
+                                parsed_args = {}
+                                try:
+                                    parsed_args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
+                                except json.JSONDecodeError:
+                                    parsed_args = {}
+
+                                result = await self.tool_functions[name](parsed_args)
                                 tool_output = json.dumps({'result': result}, ensure_ascii=False)
 
                                 tool_event = {
@@ -468,7 +500,7 @@ class RealtimeGPTChat(Node):
                         self.assistant_text += response_data['delta']
                     # Retrieve the completion status of the server response
                     elif response_type in ('response.audio_transcript.done', 'response.text.done'):
-                        self.get_logger().info(response)
+
                         text_msg = String()
                         text_msg.data = f'robot: {self.assistant_text}'
                         self.text_publisher.publish(text_msg)
@@ -504,6 +536,15 @@ class RealtimeGPTChat(Node):
                         text_msg.data = f'user: {transcript}'
                         self.text_publisher.publish(text_msg)
                         self.save_to_history('user', transcript)
+                        if '私は誰' in transcript:
+                            if self.audio_data_msg is None or len(self.audio_data_msg.audio.data) == 0:
+                                self.get_logger().warn('No audio data available to publish')
+                                return
+                            self.audio_info_publisher.publish(self.audio_info_msg)
+                            self.audio_stamped_publisher.publish(self.audio_data_msg)
+                            self.get_logger().info(
+                                f'Published AudioDataStamped (bytes={len(self._speech_pcm_buffer)})')
+                            self._speech_pcm_buffer.clear()
                     # Retrieve rate limit information
                     elif response_type == 'rate_limits.updated':
                         rate_limits = response_data.get('rate_limits', [])
@@ -520,8 +561,20 @@ class RealtimeGPTChat(Node):
                     if 'type' in response_data and response_data['type'] == 'input_audio_buffer.speech_started':
                         self._cancel_waiting_timer()
                         self.cancel_speech()
+                        self.get_logger().info('Speech started: begin recording audio')
+                        self._recording_speech = True
+                        self._speech_pcm_buffer.clear()
                         while not self.audio_receive_queue.empty():
                             self.audio_receive_queue.get()
+                    if response_data['type'] == 'input_audio_buffer.speech_stopped':
+                        self.get_logger().info('Speech stopped: publish AudioDataStamped')
+                        self._recording_speech = False
+                        if len(self._speech_pcm_buffer) == 0:
+                            self.get_logger().warn('No audio captured for this utterance')
+                            return
+                        self.audio_data_msg.header.stamp = self.get_clock().now().to_msg()
+                        self.audio_data_msg.header.frame_id = 'mic'
+                        self.audio_data_msg.audio.data = bytes(self._speech_pcm_buffer)
                     if 'type' in response_data and response_data['type'] == 'response.audio.delta':
                         base64_audio_response = response_data['delta']
                         if base64_audio_response:
@@ -535,7 +588,7 @@ class RealtimeGPTChat(Node):
 
     async def stream_audio_and_receive_response(self) -> None:
         """Establish a WebSocket connection and manage audio streaming."""
-        # [TODO] if self.use_topic is true, add tools from yaml and python data
+        # if self.use_topic is true, add tools from yaml and python data
         # tools_file_path = '/config/realtime_tools_' + self.tool_names[0] + '.yaml'
         # python_file_path = '/config/realtime_tools_' + self.tool_names[0] + '.py'
         # function_name = self.tool_names[0]

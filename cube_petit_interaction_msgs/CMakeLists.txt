@@ -21,7 +21,15 @@ endif()
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
-set(srv_files "srv/CreateUser.srv" "srv/UpdateInteraction.srv")
+set(
+  srv_files
+  "srv/CreateUser.srv"
+  "srv/UpdateInteraction.srv"
+  "srv/GetUserSummary.srv"
+  "srv/GetCurrentSpeaker.srv"
+  "srv/SetDisplayName.srv"
+  "srv/RegisterSpeaker.srv"
+)
 
 rosidl_generate_interfaces(
   ${PROJECT_NAME}

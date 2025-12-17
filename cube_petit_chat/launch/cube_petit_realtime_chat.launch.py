@@ -122,7 +122,7 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument('use_input_topic', default_value='false', description='Use topic to input audio source'))
 
     args.append(
-        DeclareLaunchArgument('use_history', default_value='true', description='Use conversation history to chat.'))
+        DeclareLaunchArgument('use_history', default_value='false', description='Use conversation history to chat.'))
 
     args.append(
         DeclareLaunchArgument('history_file',
@@ -132,7 +132,9 @@ def generate_launch_description() -> LaunchDescription:
     args.append(DeclareLaunchArgument('use_tools', default_value='true', description='Weather use function call.'))
 
     args.append(
-        DeclareLaunchArgument('tool_names', default_value="['horoscope', 'weather']", description='function names'))
+        DeclareLaunchArgument('tool_names',
+                              default_value="['horoscope', 'weather', 'memory_voice', 'memory_name']",
+                              description='function names'))
     args.append(
         DeclareLaunchArgument('tools.horoscope.python_path',
                               default_value=[pkg_path, 'config/tools/horoscope/horoscope.py'],
@@ -149,7 +151,23 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument('tools.weather.yaml_path',
                               default_value=[pkg_path, 'config/tools/weather/weather.yaml'],
                               description='yaml_file_path'))
+    args.append(
+        DeclareLaunchArgument('tools.memory_voice.python_path',
+                              default_value=[pkg_path, 'config/tools/memory_voice/memory_voice.py'],
+                              description='python_file_path'))
+    args.append(
+        DeclareLaunchArgument('tools.memory_voice.yaml_path',
+                              default_value=[pkg_path, 'config/tools/memory_voice/memory_voice.yaml'],
+                              description='yaml_file_path'))
+    args.append(
+        DeclareLaunchArgument('tools.memory_name.python_path',
+                              default_value=[pkg_path, 'config/tools/memory_name/memory_name.py'],
+                              description='python_file_path'))
+    args.append(
+        DeclareLaunchArgument('tools.memory_name.yaml_path',
+                              default_value=[pkg_path, 'config/tools/memory_name/memory_name.yaml'],
+                              description='yaml_file_path'))
 
-    args.append(DeclareLaunchArgument('start_enable', default_value='false', description='Start with API Enable.'))
+    args.append(DeclareLaunchArgument('start_enable', default_value='true', description='Start with API Enable.'))
 
     return LaunchDescription(args + [OpaqueFunction(function=launch_setup)])

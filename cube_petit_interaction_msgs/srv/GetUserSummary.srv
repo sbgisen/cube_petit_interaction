@@ -1,0 +1,7 @@
+# GetUserSummary.srv
+string user_id
+---
+int32 interaction_count
+float32 confidence
+bool has_name
+string display_name

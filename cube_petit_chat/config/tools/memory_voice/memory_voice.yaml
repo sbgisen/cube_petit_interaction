@@ -1,0 +1,4 @@
+# Sample to use Function Call
+type: function
+name: memory_voice
+description: "私は誰？と聞かれたら実行"

@@ -34,6 +34,8 @@ setup(
         ('share/' + package_name, ['pyproject.toml']),
         (os.path.join('share', package_name, 'config/tools/horoscope'), glob('config/tools/horoscope/*')),
         (os.path.join('share', package_name, 'config/tools/weather'), glob('config/tools/weather/*')),
+        (os.path.join('share', package_name, 'config/tools/memory_voice'), glob('config/tools/memory_voice/*')),
+        (os.path.join('share', package_name, 'config/tools/memory_name'), glob('config/tools/memory_name/*')),
         (os.path.join('share', package_name, 'launch'), glob('launch/*')),
         (os.path.join('share', package_name, 'resource', 'history'), glob('resource/history/*.jsonl')),
         # (os.path.join('share', package_name, 'resource'), glob('resource/*.png')),

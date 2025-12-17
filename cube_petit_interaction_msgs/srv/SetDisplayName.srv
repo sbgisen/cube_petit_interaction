@@ -1,0 +1,6 @@
+# SetDisplayName.srv
+string user_id
+string display_name
+bool confirmed
+---
+bool success

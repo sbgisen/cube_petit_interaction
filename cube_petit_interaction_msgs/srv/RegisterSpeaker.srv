@@ -1,0 +1,5 @@
+# RegisterSpeaker.srv
+string user_id
+float32[] embedding
+---
+bool success

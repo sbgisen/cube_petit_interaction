@@ -1,0 +1,11 @@
+type: function
+name: memory_name
+description: "名前を覚えてと言われたときに実行"
+parameters:
+  type: object
+  properties:
+    display_name:
+      type: string
+      description: "ユーザが名乗った名前"
+  required:
+    - display_name
