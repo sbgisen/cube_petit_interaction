@@ -150,6 +150,6 @@ def generate_launch_description() -> LaunchDescription:
                               default_value=[pkg_path, 'config/tools/weather/weather.yaml'],
                               description='yaml_file_path'))
 
-    args.append(DeclareLaunchArgument('start_enable', default_value='true', description='Start with API Enable.'))
+    args.append(DeclareLaunchArgument('start_enable', default_value='false', description='Start with API Enable.'))
 
     return LaunchDescription(args + [OpaqueFunction(function=launch_setup)])

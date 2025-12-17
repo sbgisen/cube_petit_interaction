@@ -22,3 +22,5 @@
 {"role": "assistant", "content": "今日の東京の気温は12.2度です。"}
 {"role": "assistant", "content": "こんにちは！今日はどんなことをお手伝いしましょうか？"}
 {"role": "user", "content": "こんにちは"}
+{"role": "assistant", "content": "こんにちは！今日はどのようなことでお手伝いできますか？"}
+{"role": "user", "content": "こんにちは"}

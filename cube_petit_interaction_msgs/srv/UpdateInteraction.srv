@@ -1,0 +1,8 @@
+# Request
+string user_id
+
+---
+# Response
+bool success
+float32 confidence
+int32 interaction_count

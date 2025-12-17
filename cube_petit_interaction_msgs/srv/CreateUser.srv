@@ -1,0 +1,8 @@
+# Request
+# （今回は何も送らない）
+---
+
+# Response
+string user_id
+float32 confidence
+int32 interaction_count
