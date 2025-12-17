@@ -1,0 +1,38 @@
+[project]
+name = "cube_petit_chat"
+version = "0.1.0"
+description = "The cube_petit_chat package"
+license = { text = "Apache-2.0" }
+maintainers = [
+    { name = "SoftBank corp.", email = "SBGRP-git@g.softbank.co.jp" },
+]
+dependencies = [
+    "numpy<2",
+    "openai",
+    "pyyaml",
+    "beartype",
+    "opencv-python",
+    "requests",
+    "pyaudio",
+    "websockets",
+    "sounddevice",
+    "openai-agents>=0.1.0",
+    "transforms3d",
+    "aiohttp",
+    "pydantic>=2.10.6",
+    "pillow",
+    "phomemo_printer",
+]
+
+[project.scripts]
+realtime_gpt_chat = "cube_petit_chat.nodes.realtime_gpt_chat:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["cube_petit_chat"]

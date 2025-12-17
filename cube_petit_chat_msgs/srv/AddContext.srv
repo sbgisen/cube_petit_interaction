@@ -1,0 +1,8 @@
+uint8 role
+uint8 SYSTEM = 0
+uint8 ROBOT = 1
+uint8 USER = 2
+string context
+sensor_msgs/Image[] images
+---
+bool success

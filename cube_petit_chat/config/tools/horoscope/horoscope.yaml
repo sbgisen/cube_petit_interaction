@@ -1,0 +1,33 @@
+# Sample to use Function Call
+type: function
+name: horoscope
+description: "Give today's horoscope for an astrological sign."
+parameters:
+  type: object
+  properties:
+    sign:
+      type: string
+      description: "The sign for the horoscope."
+      enum:
+        - Aries
+        - Taurus
+        - Gemini
+        - Cancer
+        - Leo
+        - Virgo
+        - Libra
+        - Scorpio
+        - Sagittarius
+        - Capricorn
+        - Aquarius
+        - Pisces
+    day:
+      type: string
+      description: "The day. today or tomorrow or yesterday"
+      enum:
+        - TODAY
+        - TOMORROW
+        - YESTERDAY
+  required:
+    - sign
+    - day

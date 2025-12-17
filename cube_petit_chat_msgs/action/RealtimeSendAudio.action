@@ -1,0 +1,11 @@
+# Goal
+string filename
+string text
+
+---
+# Result
+bool success
+
+---
+# Feedback
+string status

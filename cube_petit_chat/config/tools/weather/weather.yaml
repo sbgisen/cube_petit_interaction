@@ -1,0 +1,15 @@
+# Sample to use Function Call
+type: function
+name: weather
+description: "Get the current weather...Can get only tokyo and nagoya now.."
+parameters:
+  type: object
+  properties:
+    location:
+      type: string
+      description: "The location for the get weather."
+      enum:
+        - Tokyo
+        - Nagoya
+  required:
+    - location
