@@ -1,0 +1,22 @@
+[project]
+name = "memory_person"
+version = "0.1.0"
+description = "The person_detection package"
+license = { text = "Apache-2.0" }
+maintainers = [
+    { name = "SoftBank corp.", email = "SBGRP-git@g.softbank.co.jp" },
+]
+dependencies = ["numpy<2"]
+
+[project.scripts]
+user_store_node = "memory_person.memory_person.nodes.user_store_node:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["memory_person"]
