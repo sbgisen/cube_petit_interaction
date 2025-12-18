@@ -66,6 +66,7 @@ class RealtimeGPTChat(Node):
 
         self.audio_threads = []
         self.assistant_text = ''
+        self.all_tool_functions: dict[str, callable] = {}
 
         self.declare_parameters(namespace='',
                                 parameters=[
@@ -82,7 +83,9 @@ class RealtimeGPTChat(Node):
                                     ('input_topic_name', ''),
                                     ('use_speech_action', False),
                                     ('use_tools', True),
+                                    ('use_gpt_tools', True),
                                     ('tool_names', ['']),
+                                    ('gpt_tool_names', ['']),
                                     ('waiting_time', 10),
                                     ('start_enable', False),
                                 ])
@@ -96,11 +99,17 @@ class RealtimeGPTChat(Node):
         self.use_history = self.get_parameter('use_history').get_parameter_value().bool_value
         self.history_file = self.get_parameter('history_file').get_parameter_value().string_value
         self.use_tools = self.get_parameter('use_tools').get_parameter_value().bool_value
+        self.use_gpt_tools = self.get_parameter('use_gpt_tools').get_parameter_value().bool_value
 
         if self.use_tools:
             self.tool_names = self.get_parameter('tool_names').get_parameter_value().string_array_value
         else:
             self.tool_names = None
+
+        if self.use_gpt_tools:
+            self.gpt_tool_names = self.get_parameter('gpt_tool_names').get_parameter_value().string_array_value
+        else:
+            self.gpt_tool_names = None
 
         self.waiting_time = self.get_parameter('waiting_time').get_parameter_value().integer_value
 
@@ -426,27 +435,28 @@ class RealtimeGPTChat(Node):
                                 f'Published AudioDataStamped (bytes={len(self._speech_pcm_buffer)})')
                             self._speech_pcm_buffer.clear()
 
-                        if hasattr(self, 'tool_functions') and name in self.tool_functions:
+                        if name in self.all_tool_functions:
                             try:
                                 raw_args = response_data.get('arguments', '{}')
-                                parsed_args = {}
                                 try:
                                     parsed_args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
                                 except json.JSONDecodeError:
                                     parsed_args = {}
 
-                                result = await self.tool_functions[name](parsed_args)
-                                tool_output = json.dumps({'result': result}, ensure_ascii=False)
+                                result = await self.all_tool_functions[name](parsed_args)
 
                                 tool_event = {
                                     'type': 'conversation.item.create',
                                     'item': {
                                         'type': 'function_call_output',
                                         'call_id': call_id,
-                                        'output': tool_output
+                                        'output': json.dumps({'result': result}, ensure_ascii=False)
                                     }
                                 }
+
                                 await websocket.send(json.dumps(tool_event))
+
+                                # Ask the model to continue after tool execution
                                 await websocket.send(
                                     json.dumps({
                                         'type': 'response.create',
@@ -454,9 +464,72 @@ class RealtimeGPTChat(Node):
                                             'modalities': ['text']
                                         }
                                     }))
+
                             except Exception as e:
-                                self.get_logger().error(f'Error executing tool {name}: {e}')
-                        continue
+                                self.get_logger().error(f'Error executing tool "{name}": {e}')
+
+                        # if hasattr(self, 'tool_functions') and name in self.tool_functions:
+                        #     try:
+                        #         raw_args = response_data.get('arguments', '{}')
+                        #         parsed_args = {}
+                        #         try:
+                        #             parsed_args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
+                        #         except json.JSONDecodeError:
+                        #             parsed_args = {}
+
+                        #         result = await self.tool_functions[name](parsed_args)
+                        #         tool_output = json.dumps({'result': result}, ensure_ascii=False)
+
+                        #         tool_event = {
+                        #             'type': 'conversation.item.create',
+                        #             'item': {
+                        #                 'type': 'function_call_output',
+                        #                 'call_id': call_id,
+                        #                 'output': tool_output
+                        #             }
+                        #         }
+                        #         await websocket.send(json.dumps(tool_event))
+                        #         await websocket.send(
+                        #             json.dumps({
+                        #                 'type': 'response.create',
+                        #                 'response': {
+                        #                     'modalities': ['text']
+                        #                 }
+                        #             }))
+                        #     except Exception as e:
+                        #         self.get_logger().error(f'Error executing tool {name}: {e}')
+
+                        # if hasattr(self, 'tool_functions') and name in self.gpt_tool_functions:
+                        #     try:
+                        #         raw_args = response_data.get('arguments', '{}')
+                        #         parsed_args = {}
+                        #         try:
+                        #             parsed_args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
+                        #         except json.JSONDecodeError:
+                        #             parsed_args = {}
+
+                        #         result = await self.gpt_tool_functions[name](parsed_args)
+                        #         tool_output = json.dumps({'result': result}, ensure_ascii=False)
+
+                        #         tool_event = {
+                        #             'type': 'conversation.item.create',
+                        #             'item': {
+                        #                 'type': 'function_call_output',
+                        #                 'call_id': call_id,
+                        #                 'output': tool_output
+                        #             }
+                        #         }
+                        #         await websocket.send(json.dumps(tool_event))
+                        #         await websocket.send(
+                        #             json.dumps({
+                        #                 'type': 'response.create',
+                        #                 'response': {
+                        #                     'modalities': ['text']
+                        #                 }
+                        #             }))
+                        #     except Exception as e:
+                        #         self.get_logger().error(f'Error executing tool {name}: {e}')
+                        #     continue
 
                     if response_type == 'conversation.item.created':
                         item = response_data.get('item', {})
@@ -620,17 +693,17 @@ class RealtimeGPTChat(Node):
 
                     self.get_logger().info(str(self.use_tools))
                     self.get_logger().info(str(self.tool_names))
+                    tools_yaml = []
+                    self.tool_functions = {}
                     if self.use_tools and self.tool_names:
-                        tools_yaml = []
-                        self.tool_functions = {}
 
                         for tool_name in self.tool_names:
                             try:
-                                yaml_path = self.declare_parameter(f'tools.{tool_name}.yaml_path',
-                                                                   '').get_parameter_value().string_value
+                                yaml_path = self.get_parameter(
+                                    f'tools.{tool_name}.yaml_path').get_parameter_value().string_value
 
-                                py_path = self.declare_parameter(f'tools.{tool_name}.python_path',
-                                                                 '').get_parameter_value().string_value
+                                py_path = self.get_parameter(
+                                    f'tools.{tool_name}.python_path').get_parameter_value().string_value
 
                                 self.get_logger().info(f'Looking for tool in: {yaml_path}')
                                 self.get_logger().info(f'Looking for python in: {py_path}')
@@ -647,11 +720,53 @@ class RealtimeGPTChat(Node):
 
                                 self.tool_functions[tool_name] = getattr(module, tool_name)
                                 self.get_logger().info(f'Loaded tool: {tool_name}')
+                                self.all_tool_functions[tool_name] = getattr(module, tool_name)
 
                             except Exception as e:
                                 self.get_logger().error(f'Failed to load tool {tool_name}: {e}')
 
-                        update_request['session']['tools'] = tools_yaml
+                    self.get_logger().info(str(self.use_gpt_tools))
+                    self.get_logger().info(str(self.gpt_tool_names))
+                    gpt_tools_yaml = []
+                    self.gpt_tool_functions = {}
+                    if self.use_gpt_tools and self.gpt_tool_names:
+                        for tool_name in self.gpt_tool_names:
+                            try:
+                                yaml_path = self.get_parameter(
+                                    f'gpt_tools.{tool_name}.yaml_path').get_parameter_value().string_value
+
+                                py_path = self.get_parameter(
+                                    f'gpt_tools.{tool_name}.python_path').get_parameter_value().string_value
+
+                                self.get_logger().info(f'Looking for gpt_tool in: {yaml_path}')
+                                self.get_logger().info(f'Looking for python in: {py_path}')
+
+                                with open(yaml_path, 'r', encoding='utf-8') as f:
+                                    tool_yaml = yaml.safe_load(f)
+
+                                gpt_tools_yaml.append(tool_yaml)
+                                self.get_logger().info(f"YAML loaded successfully: {tool_yaml.get('name')}")
+
+                                spec = importlib.util.spec_from_file_location(tool_name, py_path)
+                                module = importlib.util.module_from_spec(spec)
+                                spec.loader.exec_module(module)
+
+                                self.gpt_tool_functions[tool_name] = getattr(module, tool_name)
+                                self.get_logger().info(f'Loaded tool: {tool_name}')
+                                self.all_tool_functions[tool_name] = getattr(module, tool_name)
+
+                            except Exception as e:
+                                self.get_logger().error(f'Failed to load tool {tool_name}: {e}')
+
+                    all_tools = []
+                    if self.use_tools and self.tool_names:
+                        all_tools.extend(tools_yaml)
+
+                    if self.use_gpt_tools and self.gpt_tool_names:
+                        all_tools.extend(gpt_tools_yaml)
+
+                    if all_tools:
+                        update_request['session']['tools'] = all_tools
 
                     await websocket.send(json.dumps(update_request))
 

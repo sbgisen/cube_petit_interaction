@@ -1,0 +1,12 @@
+# Sample to use Function Call
+type: function
+name: gpt_chat
+description: "何かについて調べてくださいと言われたら実行"
+parameters:
+  type: object
+  properties:
+    command:
+      type: string
+      description: "調べる対象"
+  required:
+    - command

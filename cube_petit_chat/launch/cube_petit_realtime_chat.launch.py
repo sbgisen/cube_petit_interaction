@@ -19,12 +19,14 @@ import ast
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
+from launch.actions import GroupAction
 from launch.actions import OpaqueFunction
 from launch.launch_context import LaunchContext
 from launch.substitutions import EnvironmentVariable
 from launch.substitutions import LaunchConfiguration
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.actions import Node
+from launch_ros.actions import PushRosNamespace
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -44,6 +46,8 @@ def launch_setup(context: LaunchContext) -> list:
         'history_file': LaunchConfiguration('history_file'),
         'tool_names': LaunchConfiguration('tool_names'),
         'use_tools': LaunchConfiguration('use_tools'),
+        'use_gpt_tools': LaunchConfiguration('use_gpt_tools'),
+        'gpt_tool_names': LaunchConfiguration('gpt_tool_names'),
         'start_enable': LaunchConfiguration('start_enable'),
     }
     tool_names_str = LaunchConfiguration('tool_names').perform(context)
@@ -72,15 +76,65 @@ def launch_setup(context: LaunchContext) -> list:
         parameters[f'tools.{tool_name}.yaml_path'] = yaml_path
         parameters[f'tools.{tool_name}.package'] = pkg_name
 
-    return [
-        Node(
-            package='cube_petit_chat',
-            executable='realtime_gpt_chat',
-            name='realtime_gpt_chat',
-            output='screen',
-            parameters=[parameters],
-        )
-    ]
+    gpt_nodes = []
+    gpt_tool_names_str = LaunchConfiguration('gpt_tool_names').perform(context)
+    try:
+        gpt_tool_names = ast.literal_eval(gpt_tool_names_str)
+        if not isinstance(gpt_tool_names, list):
+            gpt_tool_names = [str(gpt_tool_names)]
+    except Exception:
+        gpt_tool_names = [n.strip() for n in gpt_tool_names_str.split(',') if n.strip()]
+
+    for gpt_tool_name in gpt_tool_names:
+        if not gpt_tool_name:
+            continue
+
+        pkg_arg_name = f'gpt_tools.{gpt_tool_name}.package'
+        try:
+            pkg_name = LaunchConfiguration(pkg_arg_name).perform(context)
+            if not pkg_name:
+                pkg_name = 'cube_petit_chat'
+        except Exception:
+            pkg_name = 'cube_petit_chat'
+
+        pkg_share_path = FindPackageShare(pkg_name).perform(context)
+        py_path = str(
+            PathJoinSubstitution([pkg_share_path, 'config', 'gpt_tools', gpt_tool_name,
+                                  f'{gpt_tool_name}.py']).perform(context))
+        yaml_path = str(
+            PathJoinSubstitution([pkg_share_path, 'config', 'gpt_tools', gpt_tool_name,
+                                  f'{gpt_tool_name}.yaml']).perform(context))
+        parameters[f'gpt_tools.{gpt_tool_name}.python_path'] = py_path
+        parameters[f'gpt_tools.{gpt_tool_name}.yaml_path'] = yaml_path
+        parameters[f'gpt_tools.{gpt_tool_name}.package'] = pkg_name
+
+        instruction_path = LaunchConfiguration(f'gpt_tools.{gpt_tool_name}.setting_path')
+
+        gpt_nodes.append(
+            GroupAction(actions=[
+                PushRosNamespace(gpt_tool_name),
+                Node(package='sbgisen_conversation',
+                     executable='gpt_conversation',
+                     name='chatter',
+                     output='screen',
+                     parameters=[{
+                         'model': 'gpt-4.1-mini',
+                         'instructions_file': instruction_path,
+                         'enable_web_search': True,
+                         'max_tokens': 1000,
+                         'max_turns': 2,
+                         'structured_output_file': '',
+                     }])
+            ]))
+    realtime_node = Node(
+        package='cube_petit_chat',
+        executable='realtime_gpt_chat',
+        name='realtime_gpt_chat',
+        output='screen',
+        parameters=[parameters],
+    )
+
+    return [realtime_node] + gpt_nodes
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -130,6 +184,7 @@ def generate_launch_description() -> LaunchDescription:
                               description='History file path(jsonl).'))
 
     args.append(DeclareLaunchArgument('use_tools', default_value='true', description='Weather use function call.'))
+    args.append(DeclareLaunchArgument('use_gpt_tools', default_value='true', description='Weather use function call.'))
 
     args.append(
         DeclareLaunchArgument('tool_names',
@@ -167,6 +222,20 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument('tools.memory_name.yaml_path',
                               default_value=[pkg_path, 'config/tools/memory_name/memory_name.yaml'],
                               description='yaml_file_path'))
+
+    args.append(DeclareLaunchArgument('gpt_tool_names', default_value="['gpt_chat']", description='function names'))
+    args.append(
+        DeclareLaunchArgument('gpt_tools.gpt_chat.python_path',
+                              default_value=[pkg_path, 'config/gpt_tools/gpt_chat/gpt_chat.py'],
+                              description='python_file_path'))
+    args.append(
+        DeclareLaunchArgument('gpt_tools.gpt_chat.yaml_path',
+                              default_value=[pkg_path, 'config/gpt_tools/gpt_chat/gpt_chat.yaml'],
+                              description='yaml_file_path'))
+    args.append(
+        DeclareLaunchArgument('gpt_tools.gpt_chat.setting_path',
+                              default_value=[pkg_path, 'config/gpt_tools/gpt_chat/gpt_chat.txt'],
+                              description='setting_file_path'))
 
     args.append(DeclareLaunchArgument('start_enable', default_value='true', description='Start with API Enable.'))
 
