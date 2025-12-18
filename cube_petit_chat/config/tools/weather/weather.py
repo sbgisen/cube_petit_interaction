@@ -89,7 +89,15 @@ async def get_weather_from_api(location: str) -> dict:
 async def weather(arguments: dict) -> str:
     """Call Horoscope API and return formatted text."""
     try:
-        args = json.loads(arguments)
+        args = {}
+        if isinstance(arguments, str):
+            try:
+                args = json.loads(arguments)
+            except json.JSONDecodeError:
+                args = {}
+        elif isinstance(arguments, dict):
+            args = arguments
+
         location = args.get('location', '東京')
         if location == 'tokyo':
             location = '東京'

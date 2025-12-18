@@ -57,6 +57,7 @@ def launch_setup(context: LaunchContext) -> list:
             tool_names = [str(tool_names)]
     except Exception:
         tool_names = [n.strip() for n in tool_names_str.split(',') if n.strip()]
+
     for tool_name in tool_names:
         if not tool_name:
             continue
@@ -104,6 +105,10 @@ def launch_setup(context: LaunchContext) -> list:
         yaml_path = str(
             PathJoinSubstitution([pkg_share_path, 'config', 'gpt_tools', gpt_tool_name,
                                   f'{gpt_tool_name}.yaml']).perform(context))
+        output_py_path = str(
+            PathJoinSubstitution([pkg_share_path, 'config', 'gpt_tools', gpt_tool_name,
+                                  f'{gpt_tool_name}_output.py']).perform(context))
+        parameters[f'gpt_tools.{gpt_tool_name}.output_python_path'] = output_py_path
         parameters[f'gpt_tools.{gpt_tool_name}.python_path'] = py_path
         parameters[f'gpt_tools.{gpt_tool_name}.yaml_path'] = yaml_path
         parameters[f'gpt_tools.{gpt_tool_name}.package'] = pkg_name
@@ -118,12 +123,13 @@ def launch_setup(context: LaunchContext) -> list:
                      name='chatter',
                      output='screen',
                      parameters=[{
+                         'api_key': LaunchConfiguration('api_key').perform(context),
                          'model': 'gpt-4.1-mini',
                          'instructions_file': instruction_path,
                          'enable_web_search': True,
                          'max_tokens': 1000,
                          'max_turns': 2,
-                         'structured_output_file': '',
+                         'structured_output_file': output_py_path,
                      }])
             ]))
     realtime_node = Node(
@@ -229,12 +235,17 @@ def generate_launch_description() -> LaunchDescription:
                               default_value=[pkg_path, 'config/gpt_tools/gpt_chat/gpt_chat.py'],
                               description='python_file_path'))
     args.append(
+        DeclareLaunchArgument('gpt_tools.gpt_chat.output_python_path',
+                              default_value=[pkg_path, 'config/gpt_tools/gpt_chat/gpt_chat_output.py'],
+                              description='python_file_path'))
+
+    args.append(
         DeclareLaunchArgument('gpt_tools.gpt_chat.yaml_path',
                               default_value=[pkg_path, 'config/gpt_tools/gpt_chat/gpt_chat.yaml'],
                               description='yaml_file_path'))
     args.append(
         DeclareLaunchArgument('gpt_tools.gpt_chat.setting_path',
-                              default_value=[pkg_path, 'config/gpt_tools/gpt_chat/gpt_chat.txt'],
+                              default_value=[pkg_path, '/config/gpt_tools/gpt_chat/gpt_chat.txt'],
                               description='setting_file_path'))
 
     args.append(DeclareLaunchArgument('start_enable', default_value='true', description='Start with API Enable.'))

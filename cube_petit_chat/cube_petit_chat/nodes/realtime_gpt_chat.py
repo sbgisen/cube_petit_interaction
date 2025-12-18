@@ -699,11 +699,11 @@ class RealtimeGPTChat(Node):
 
                         for tool_name in self.tool_names:
                             try:
-                                yaml_path = self.get_parameter(
-                                    f'tools.{tool_name}.yaml_path').get_parameter_value().string_value
+                                yaml_path = self.declare_parameter(f'tools.{tool_name}.yaml_path',
+                                                                   '').get_parameter_value().string_value
 
-                                py_path = self.get_parameter(
-                                    f'tools.{tool_name}.python_path').get_parameter_value().string_value
+                                py_path = self.declare_parameter(f'tools.{tool_name}.python_path',
+                                                                 '').get_parameter_value().string_value
 
                                 self.get_logger().info(f'Looking for tool in: {yaml_path}')
                                 self.get_logger().info(f'Looking for python in: {py_path}')
@@ -732,11 +732,11 @@ class RealtimeGPTChat(Node):
                     if self.use_gpt_tools and self.gpt_tool_names:
                         for tool_name in self.gpt_tool_names:
                             try:
-                                yaml_path = self.get_parameter(
-                                    f'gpt_tools.{tool_name}.yaml_path').get_parameter_value().string_value
+                                yaml_path = self.declare_parameter(f'gpt_tools.{tool_name}.yaml_path',
+                                                                   '').get_parameter_value().string_value
 
-                                py_path = self.get_parameter(
-                                    f'gpt_tools.{tool_name}.python_path').get_parameter_value().string_value
+                                py_path = self.declare_parameter(f'gpt_tools.{tool_name}.python_path',
+                                                                 '').get_parameter_value().string_value
 
                                 self.get_logger().info(f'Looking for gpt_tool in: {yaml_path}')
                                 self.get_logger().info(f'Looking for python in: {py_path}')

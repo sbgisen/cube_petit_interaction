@@ -15,10 +15,12 @@
 # limitations under the License.
 #
 
+import asyncio
 import json
 
 import rclpy
 from sbgisen_conversation_commander import ConversationCommander
+from sbgisen_conversation_msgs.srv import Chat
 
 
 async def call_gpt_api(command: str) -> str:
@@ -39,31 +41,38 @@ async def call_gpt_api(command: str) -> str:
     node = None
 
     try:
-        if isinstance(command, str):
-            command = json.loads(command)
-
-        input_text = command.get('command', '').strip()
+        input_text = command
         if not rclpy.ok():
             rclpy.init(args=None)
         node = rclpy.create_node('call_gpt_chat')
 
-        service_names = ['clear_chat_history', 'add_chat_context', 'chat']
-
-        for service_name in service_names:
-            full_service_name = f'{set_namespace}/{service_name}'
-            if not node.wait_for_service(full_service_name, timeout_sec=5.0):
-                node.get_logger().error('Chat commander service timeout')
-                return 'Service timeout occurred while waiting for GPT services.'
+        # service_names = ['clear_chat_history', 'add_chat_context', 'chat']
+        # service_type = [Trigger, AddContext, Chat]
+        chat_client = node.create_client(Chat, set_namespace + '/chat')
+        if not chat_client.wait_for_service(timeout_sec=5.0):
+            node.get_logger().error('Chat commander service timeout')
+            return 'Service timeout occurred while waiting for GPT services.'
+        # for service_name in service_names:
+        #     client = node.create_client(SomeSrvType, full_service_name)
+        #     if not client.wait_for_service(full_service_name, timeout_sec=5.0):
+        #         node.get_logger().error('Chat commander service timeout')
+        #         return 'Service timeout occurred while waiting for GPT services.'
 
         try:
-            node._talk_conversation = ConversationCommander(node, True, f'{set_namespace}/clear_chat_history',
-                                                            f'{set_namespace}/add_chat_context',
-                                                            f'{set_namespace}/chat')
+            talk_conversation = ConversationCommander(node, True, f'{set_namespace}/clear_chat_history',
+                                                      f'{set_namespace}/add_chat_context', f'{set_namespace}/chat')
         except Exception:
             return 'GPT API node is not running.'
 
         try:
-            resp = node.__talk_conversation.chat(text=input_text)
+            node.get_logger().info('Before chat()')
+            loop = asyncio.get_running_loop()
+            resp = await loop.run_in_executor(None, lambda: talk_conversation.chat(text=input_text))
+            node.get_logger().info('After chat()')
+
+            for _ in range(50):
+                rclpy.spin_once(node, timeout_sec=0.0)
+                await asyncio.sleep(0.01)
             try:
                 resp_data = json.loads(resp)
                 if 'speech_phrases' in resp_data:
@@ -86,8 +95,18 @@ async def call_gpt_api(command: str) -> str:
 
 
 async def gpt_chat(arguments: dict) -> str:
+
     try:
-        args = json.loads(arguments)
+        args = {}
+
+        if isinstance(arguments, str):
+            try:
+                args = json.loads(arguments)
+            except json.JSONDecodeError:
+                args = {}
+        elif isinstance(arguments, dict):
+            args = arguments
+
         command = args.get('command', '')
         result_text = await call_gpt_api(command)
         return f'{result_text}'

@@ -42,7 +42,15 @@ async def get_horoscope_from_api(sign: str, day: str) -> str:
 async def horoscope(arguments: dict) -> str:
     """Call Horoscope API and return formatted text."""
     try:
-        args = json.loads(arguments)
+        args = {}
+        if isinstance(arguments, str):
+            try:
+                args = json.loads(arguments)
+            except json.JSONDecodeError:
+                args = {}
+        elif isinstance(arguments, dict):
+            args = arguments
+
         sign = args.get('sign', 'Aries')
         day = args.get('day', 'TODAY')
 
