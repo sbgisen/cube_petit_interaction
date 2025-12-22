@@ -44,7 +44,7 @@ async def memory_voice(arguments: dict) -> str:
             await asyncio.sleep(0.01)
 
         speaker = future.result()
-        if speaker is None or speaker.is_new or not speaker.user_id:
+        if speaker is None or not speaker.user_id:
             return 'まだあなたのことをよく知らないみたい'
 
         user_id = speaker.user_id

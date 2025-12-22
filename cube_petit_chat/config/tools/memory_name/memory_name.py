@@ -19,7 +19,9 @@ import json
 
 import rclpy
 
+from cube_petit_interaction_msgs.srv import CreateUser
 from cube_petit_interaction_msgs.srv import GetCurrentSpeaker
+from cube_petit_interaction_msgs.srv import RegisterSpeaker
 from cube_petit_interaction_msgs.srv import SetDisplayName
 
 
@@ -53,10 +55,24 @@ async def memory_name(arguments: dict) -> str:
             await asyncio.sleep(0.01)
 
         speaker_res = future.result()
-        if speaker_res is None or speaker_res.is_new:
-            return 'もう一度話しかけてくれる？'
+        if speaker_res is None:
+            return f'もう一度話しかけてくれる？: {speaker_res.user_id}'
 
-        user_id = speaker_res.user_id
+        # create_user
+        if not speaker_res.user_id:
+            create_client = node.create_client(CreateUser, 'create_user')
+            if not create_client.wait_for_service(timeout_sec=1.0):
+                return '声を覚える準備ができてないみたい'
+
+            future = create_client.call_async(CreateUser.Request())
+            while not future.done():
+                rclpy.spin_once(node, timeout_sec=0.0)
+                await asyncio.sleep(0.01)
+
+            res = future.result()
+            user_id = res.user_id
+        else:
+            user_id = speaker_res.user_id
 
         set_client = node.create_client(
             SetDisplayName,
@@ -76,13 +92,29 @@ async def memory_name(arguments: dict) -> str:
             rclpy.spin_once(node, timeout_sec=0.0)
             await asyncio.sleep(0.01)
 
+        res = future.result()
+        if not (res and res.success):
+            return 'うまく覚えられなかったみたい'
+
         node.get_logger().info('5------------------------------')
 
+        register_client = node.create_client(RegisterSpeaker, 'register_speaker')
+        if not register_client.wait_for_service(timeout_sec=1.0):
+            return '声を覚える準備ができてないみたい'
+
+        req = RegisterSpeaker.Request()
+        req.user_id = user_id
+
+        future = register_client.call_async(req)
+        while not future.done():
+            rclpy.spin_once(node, timeout_sec=0.0)
+            await asyncio.sleep(0.01)
+
         res = future.result()
-        if res and res.success:
-            return f'{display_name} さんだね、覚えたよ'
-        else:
-            return 'うまく覚えられなかったみたい'
+        if not (res and res.success):
+            return '声を覚えるのに失敗しちゃったみたい'
+
+        return f'{display_name} さんだね、覚えたよ'
 
     except Exception as e:
         return f'名前を覚えるときにエラーが出たよ: {e}'
