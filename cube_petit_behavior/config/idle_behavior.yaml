@@ -1,0 +1,12 @@
+/**:
+  ros__parameters:
+    idle_behavior:
+      hold_time: 10.0
+
+      weights:
+        wander: 0.4
+        patrol: 0.3
+        favorite: 0.2
+        pause: 0.1
+
+      favorite_pose: [0.2, 0.3, 1.57]

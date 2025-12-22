@@ -1,0 +1,15 @@
+/**:
+  ros__parameters:
+    hysteresis_threshold: 0.15
+    intent_hold_time: 1.5 # sec
+
+    motion_weights:
+      idle: 1.0
+      approach: 1.0
+      retreat: 1.0
+      rest: 1.0
+
+    gaze_weights:
+      forward: 0.3
+      human: 1.0
+      away: 0.5

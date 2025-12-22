@@ -31,9 +31,12 @@ set(
   "srv/RegisterSpeaker.srv"
 )
 
+set(msg_files "msg/LifeState.msg")
+
 rosidl_generate_interfaces(
   ${PROJECT_NAME}
   ${srv_files}
+  ${msg_files}
   DEPENDENCIES
   ${${PROJECT_NAME}_BUILD_DEPENDS}
 )

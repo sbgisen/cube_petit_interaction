@@ -1,0 +1,23 @@
+[project]
+name = "cube_petit_behavior"
+version = "0.1.0"
+description = "The cube_petit_behavior package"
+license = { text = "Apache-2.0" }
+maintainers = [
+    { name = "SoftBank corp.", email = "SBGRP-git@g.softbank.co.jp" },
+]
+dependencies = ["numpy<2"]
+
+[project.scripts]
+behavior_node = "cube_petit_behavior.cube_petit_behavior.behavior_node:main"
+motion_adapter = "cube_petit_behavior.cube_petit_behavior.motion_adapter_node:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["memory_cube_petit_behaviorperson"]

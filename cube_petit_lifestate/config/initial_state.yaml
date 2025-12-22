@@ -1,0 +1,16 @@
+/**:
+  ros__parameters:
+    attention: 0.3
+    arousal: 0.5
+    stress: 0.0
+    loneliness: 0.2
+
+    attention_up_ac: 1
+    arousal_up_ac: 1
+    stress_up_ac: 1
+    loneliness_up_ac: 1
+
+    attention_down_ac: 1
+    arousal_down_ac: 1
+    stress_down_ac: 1
+    loneliness_down_ac: 1
