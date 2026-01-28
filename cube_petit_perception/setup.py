@@ -29,7 +29,7 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        # (f'share/{package_name}/launch', glob.glob('./launch/*.launch.py')),
+        (f'share/{package_name}/launch', glob.glob('./launch/*.launch.py')),
         (f'share/{package_name}/config', glob.glob('./config/*.yaml')),
         # (f'share/{package_name}', ['pyproject.toml']),
         # (f'share/{package_name}/srv', glob.glob('srv/*.srv'))

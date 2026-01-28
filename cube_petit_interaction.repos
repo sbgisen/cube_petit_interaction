@@ -1,0 +1,5 @@
+repositories:
+  people:
+    type: git
+    url: https://github.com/sbgisen/people.git
+    version: jazzy-devel
