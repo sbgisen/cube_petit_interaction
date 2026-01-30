@@ -47,11 +47,25 @@ def generate_launch_description() -> LaunchDescription:
                      ('people_tracker_measurements', 'pair_of_legs_position'),
                      ('visualization_marker', 'marker'),
                  ],
-                 parameters=[{
-                     'fixed_frame': 'map',
-                     'connection_threshold': 0.06,
-                     'leg_reliability_limit': 0.21,
-                     'leg_pair_separation': 0.5,
+                #  parameters=[{
+                #      'fixed_frame': 'base_link',
+                #      'connection_threshold': 0.06,
+                #      'leg_reliability_limit': 0.21,
+                #      'leg_pair_separation': 0.5,
+                #      'use_sim_time': False,
+                #  }]),
+                parameters=[{
+                     'fixed_frame': 'base_laser',
+                     'connected_thresh': 0.15,
+                     'min_points_per_group': 2,
+                     'leg_reliability_limit': -1.0,
+
+                     'leg_pair_separation': 0.45,
+                     'max_meas_jump': 1.0,
+                     'max_track_jump': 1.2,
+                     'no_observation_timeout': 1.0,
+                     'max_second_leg_age': 3.0,
+
                      'use_sim_time': False,
                  }]),
         ])
