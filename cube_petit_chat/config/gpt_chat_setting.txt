@@ -1,0 +1,2 @@
+If the user asks about the location of an object and an image is provided,
+you MUST call the function report_detections.

@@ -37,6 +37,7 @@ setup(
         (os.path.join('share', package_name, 'config/tools/weather'), glob('config/tools/weather/*')),
         (os.path.join('share', package_name, 'config/tools/memory_voice'), glob('config/tools/memory_voice/*')),
         (os.path.join('share', package_name, 'config/tools/memory_name'), glob('config/tools/memory_name/*')),
+        (os.path.join('share', package_name, 'config/add_setting_txt'), glob('config/add_setting_txt/*')),
         (os.path.join('share', package_name, 'launch'), glob('launch/*')),
         (os.path.join('share', package_name, 'resource', 'history'), glob('resource/history/*.jsonl')),
         (os.path.join('share', package_name, 'config'), glob('config/*.txt')),
@@ -50,7 +51,10 @@ setup(
     license='Apache 2.0',
     tests_require=['pytest'],
     entry_points={
-        'console_scripts': ['realtime_gpt_chat = cube_petit_chat.nodes.realtime_gpt_chat:main',],
+        'console_scripts': [
+            'gpt_api_chat = cube_petit_chat.nodes.gpt_api_chat:main',
+            'realtime_gpt_chat = cube_petit_chat.nodes.realtime_gpt_chat:main',
+        ],
     },
 )
 

@@ -132,14 +132,16 @@ def launch_setup(context: LaunchContext) -> list:
                          'structured_output_file': output_py_path,
                      }])
             ]))
-    realtime_node = Node(
-        package='cube_petit_chat',
-        executable='realtime_gpt_chat',
-        name='realtime_gpt_chat',
-        output='screen',
-        parameters=[parameters],
-    )
-
+    realtime_node = GroupAction(actions=[                                                                                                                                           
+        PushRosNamespace('cube_petit_pink'),                                                                                                                                            
+        Node(                                                                                                                                                                           
+        package='cube_petit_chat',                                                                                                                                                      
+        executable='realtime_gpt_chat',                                                                                                                                                 
+        name='realtime_gpt_chat',                                                                                                                                                       
+        output='screen',                                                                                                                                                                
+        parameters=[parameters],                                                                                                                                                        
+        )                                                                                                                                                                               
+    ])
     return [realtime_node] + gpt_nodes
 
 
@@ -182,7 +184,7 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument('use_input_topic', default_value='false', description='Use topic to input audio source'))
 
     args.append(
-        DeclareLaunchArgument('use_history', default_value='false', description='Use conversation history to chat.'))
+        DeclareLaunchArgument('use_history', default_value='true', description='Use conversation history to chat.'))
 
     args.append(
         DeclareLaunchArgument('history_file',
@@ -229,7 +231,8 @@ def generate_launch_description() -> LaunchDescription:
                               default_value=[pkg_path, 'config/tools/memory_name/memory_name.yaml'],
                               description='yaml_file_path'))
 
-    args.append(DeclareLaunchArgument('gpt_tool_names', default_value="['gpt_chat']", description='function names'))
+    # args.append(DeclareLaunchArgument('gpt_tool_names', default_value="['gpt_chat']", description='function names'))
+    args.append(DeclareLaunchArgument('gpt_tool_names', default_value="['']", description='function names'))
     args.append(
         DeclareLaunchArgument('gpt_tools.gpt_chat.python_path',
                               default_value=[pkg_path, 'config/gpt_tools/gpt_chat/gpt_chat.py'],

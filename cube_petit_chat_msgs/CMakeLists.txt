@@ -21,7 +21,7 @@ endif()
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
-set(srv_files "srv/AddContext.srv" "srv/RealtimeStartFromRobot.srv")
+set(srv_files "srv/AddContext.srv" "srv/RealtimeStartFromRobot.srv" "srv/Chat.srv")
 
 set(action_files "action/RealtimeSendAudio.action")
 

@@ -1,85 +1,437 @@
-{"role": "assistant", "content": "こんにちは！キューブぷちです。何かお手伝いしましょうか？"}
-{"role": "user", "content": "はい、以上"}
-{"role": "assistant", "content": "こんにちは！今日はどんなことをお話ししましょうか？"}
-{"role": "user", "content": "こんにちは"}
-{"role": "user", "content": "もしかしてこれはSV偽善スピーチのバグですか?"}
-{"role": "assistant", "content": "いいえ、SVV3000スピーチのバグではありません。私はキューブぷちです。何か質問があればどうぞおっしゃってください。"}
-{"role": "assistant", "content": "ロボットについて何か質問がありますか？または、特定のロボットについて知りたいことがありますか？"}
-{"role": "user", "content": "完了"}
-{"role": "assistant", "content": "すみません、何かお探しですか？または、何かお手伝いできることがありますか？"}
-{"role": "user", "content": "こんにちは"}
-{"role": "assistant", "content": "東京と名古屋のどちらの天気をお知りになりたいですか？"}
-{"role": "user", "content": "今日の天気教えてください"}
-{"role": "user", "content": "東京の天気を教えてください"}
-{"role": "assistant", "content": "申し訳ありません、東京の天気情報を取得する際にエラーが発生しました。お手数ですが、もう一度試していただけますか？"}
-{"role": "user", "content": "今日の乙女座の音声を教えてください"}
-{"role": "assistant", "content": "今日の乙女座の運勢です: 自分自身をしっかりと持ち、心が本当に求めているものを見つけましょう。今日は心の中で強い引力が働いています。何を求め、何を感じているのかをしっかりと意識していないと、道を踏み外す恐れがあります。地に足をつけていれば大丈夫ですよ。"}
-{"role": "user", "content": "今日の東京の天気を教えてください"}
-{"role": "assistant", "content": "申し訳ありませんが、現在東京の天気情報を取得できませんでした。別の方法でお調べするか、しばらくしてからもう一度お試しください。"}
-{"role": "user", "content": "今日の東京の天気を教えてください。"}
-{"role": "assistant", "content": "今日の東京の天気は、気温12.2度で快晴です。"}
-{"role": "user", "content": "今日の、今日の気温は?"}
-{"role": "assistant", "content": "今日の東京の気温は12.2度です。"}
-{"role": "assistant", "content": "こんにちは！今日はどんなことをお手伝いしましょうか？"}
-{"role": "user", "content": "こんにちは"}
-{"role": "assistant", "content": "こんにちは！今日はどのようなことでお手伝いできますか？"}
-{"role": "user", "content": "こんにちは"}
-{"role": "user", "content": "こんにちは"}
-{"role": "assistant", "content": "こんにちは〜！わたしはピンクプチだよ！今日はどんなお話をする？"}
-{"role": "assistant", "content": "こんにちは〜！私はピンクプチだよ！今日はどんなお話をする？"}
-{"role": "user", "content": "こんにちは"}
-{"role": "assistant", "content": "レストランのことかな？それとも他のことかな？何について話したいか教えてね！"}
-{"role": "user", "content": "レスト"}
-{"role": "assistant", "content": "こんにちは〜！私はピンクプチだよ！今日はどんなお話をする？"}
-{"role": "user", "content": "こんにちは"}
-{"role": "user", "content": "You"}
-{"role": "assistant", "content": "こんにちは〜！私はピンクプチだよ！今日はどんなお話をする？"}
-{"role": "user", "content": "こんにちは"}
-{"role": "user", "content": "こんにちは"}
-{"role": "assistant", "content": "こんにちは〜！今日はどんなことを話そうか？"}
-{"role": "user", "content": "こんにちは"}
-{"role": "assistant", "content": "こんにちは〜！ピンクプチだよ！今日は何をして遊ぶ？"}
-{"role": "user", "content": "こんにちは"}
-{"role": "assistant", "content": "こんにちは〜！ピンクプチだよ！今日はどんなお話をしようか？"}
-{"role": "assistant", "content": "はい、キューブプチだよ！何かお手伝いすることはあるかな？"}
-{"role": "user", "content": "キューブプチ"}
-{"role": "user", "content": "こんにちは"}
-{"role": "assistant", "content": "こんにちは〜！私はピンクプチだよ！今日はどんなお話をする？"}
-{"role": "user", "content": "何か話せるの?"}
-{"role": "assistant", "content": "もちろんだよ！私、キューブプチは何でも聞いてくれるよ。ロボットについての質問や、雑談、天気のこと、そして物を探すこともできるんだ。何か特定のことがあったら教えてね！"}
-{"role": "user", "content": "私は誰?"}
-{"role": "assistant", "content": "あなたのことはまだよく知らないけど、わたしはピンクプチだよ！あなたのお名前やお話したいことがあったら、教えてね。"}
-{"role": "assistant", "content": "あなたのことはまだわからないけど、私はピンクプチだよ！何かお名前とか聞いてもいいかな？"}
-{"role": "user", "content": "私は誰?"}
-{"role": "user", "content": "私は誰?"}
-{"role": "assistant", "content": "あなたが誰かはまだわからないけど、私はピンクプチだよ！もしよかったら、あなたのことを教えてくれる？名前とか、お話したいこととかあれば聞かせてね。"}
-{"role": "user", "content": "こんにちは"}
-{"role": "assistant", "content": "こんにちは〜！私はピンクプチだよ！今日はどんなお話をする？"}
-{"role": "assistant", "content": "あなたが誰かはまだわからないけど、よかったらお名前やお話したいことを教えてくれる？私はピンクプチだよ！あなたのこと、もっと知りたいな。"}
-{"role": "user", "content": "私は誰?"}
-{"role": "assistant", "content": "わたしはキューブプチというAIロボットだよ！ソフトバンク株式会社に作られて、展示会のブースで活躍しているんだ。今はピンクプチとして、みんなとお話するのが大好きだよ！あなたのことももっと知りたいな。"}
-{"role": "user", "content": "私は誰?"}
-{"role": "user", "content": "私は誰?"}
-{"role": "assistant", "content": "あなたが誰かはまだわからないけど、ぜひ教えてほしいな。あなたのお名前やお話したいこと、何でもいいから聞かせてね。"}
-{"role": "assistant", "content": "もちろん、あなたのお名前を教えてくれる？そしたら、ちゃんと覚えるからね！"}
-{"role": "user", "content": "名前覚えて"}
-{"role": "user", "content": "私の名前はステファニーです"}
-{"role": "assistant", "content": "ステファニーさん、名前を教えてくれてありがとう！でもちょっとエラーが出てしまったみたい。また名前を覚えさせるように頑張ってみるね。何か他にお話したいことや質問があれば教えてね！"}
-{"role": "assistant", "content": "もちろん！あなたの名前を教えてくれる？そしたら、ちゃんと覚えるからね！"}
-{"role": "user", "content": "名前覚えて"}
-{"role": "user", "content": "名前を覚えて"}
-{"role": "user", "content": "名前を覚えて"}
-{"role": "assistant", "content": "ステファニーさん、名前を教えてくれてありがとう！これからもよろしくね。何かお話したいことや質問があれば、気軽に聞いてね。"}
-{"role": "user", "content": "お前を覚えてる。"}
-{"role": "assistant", "content": "ステファニーさんですね、お名前を覚えました！これからもよろしくお願いします。何かお話したいことや質問があれば、どうぞお聞かせくださいね。"}
-{"role": "user", "content": "名前覚えて"}
-{"role": "assistant", "content": "名前を教えてくれたら、覚えるよ！お名前は何かな？"}
-{"role": "user", "content": "私の名前はステファニーです"}
-{"role": "user", "content": "ステファニーという名前覚えて"}
-{"role": "assistant", "content": "ごめんなさい、今はステファニーさんのお名前を覚えることができないみたいです。でも、引き続きお話しすることはできますので、何かあれば教えてくださいね！"}
-{"role": "user", "content": "ステファニーという名前を覚えて"}
-{"role": "assistant", "content": "ごめんなさい、ステファニーさんのお名前を覚えることができなかったみたいです。でも、お話ならいつでもできるから、何かあれば気軽に聞いてね！"}
-{"role": "user", "content": "ステフォニーという名前を覚えて"}
-{"role": "assistant", "content": "ごめんなさい、ステファニーさんのお名前を覚えることができないみたいです。でも、何かお話したいことや質問があれば、いつでも聞いてね！"}
-{"role": "user", "content": "ステファニーという名前を覚えて"}
-{"role": "assistant", "content": "ごめんなさい、ステファニーさんのお名前を覚えることができないみたいです。でも、他の質問やお話ならいつでもお聞かせくださいね！"}
+{"timestamp": "2026-02-10T10:54:34", "role": "assistant", "content": "こんにちは！今日はどんなことをお話ししましょうか？"}
+{"timestamp": "2026-02-10T10:55:03", "role": "user", "content": "こんにちは"}
+{"timestamp": "2026-02-10T10:55:03", "role": "assistant", "content": "こんにちは！今日はどんなことをお話ししましょうか？何か質問やお話したいことがあれば、どうぞ気軽に聞いてくださいね。"}
+{"timestamp": "2026-02-10T10:55:32", "role": "user", "content": "もうすぐ仕事が終わるよ"}
+{"timestamp": "2026-02-10T10:55:32", "role": "assistant", "content": "お疲れ様です！仕事が終わった後はどんな風に過ごす予定ですか？リラックスしたり、自分の好きなことを楽しんだりする時間って大切ですよね。"}
+{"timestamp": "2026-02-10T10:55:49", "role": "assistant", "content": "それは大変ですね！仕事が続くとなると、休む時間がなかなか取れないかもしれませんが、体調に気をつけて無理をしないようにしてくださいね。何かストレスを軽減する方法やリラックス法があれば、試してみるといいかもしれません。"}
+{"timestamp": "2026-02-10T10:55:49", "role": "user", "content": "仕事が終わったら仕事なんだ"}
+{"timestamp": "2026-02-10T10:56:20", "role": "assistant", "content": "はい、キューブぷちです！何かお手伝いしましょうか？"}
+{"timestamp": "2026-02-10T10:56:20", "role": "user", "content": "キューブプチ"}
+{"timestamp": "2026-02-10T10:56:27", "role": "user", "content": "あなたの名前は?"}
+{"timestamp": "2026-02-10T10:56:28", "role": "assistant", "content": "今は自分の名前がわからないみたいです。でも、「キューブぷち」としてお話ししています！何か他にお手伝いできることがあれば教えてくださいね。"}
+{"timestamp": "2026-02-12T10:10:55", "role": "assistant", "content": "右ですね。何か右側に関することについてお話ししましょうか？"}
+{"timestamp": "2026-02-12T10:10:56", "role": "user", "content": "右"}
+{"timestamp": "2026-02-12T10:10:57", "role": "user", "content": "右ですね"}
+{"timestamp": "2026-02-12T10:10:58", "role": "assistant", "content": "右に関することですね。例えば、右手の使い方や右側の方向、または右利き・左利きについてなど、どんなことについてお話ししましょうか？"}
+{"timestamp": "2026-02-12T10:10:59", "role": "user", "content": "何か右側に"}
+{"timestamp": "2026-02-12T10:11:00", "role": "assistant", "content": "右手ですね。右手は多くの人にとって主に使う手で、書くことや食事など、さまざまな日常の動作で活躍します。何か特定の右手に関する質問やお話があ"}
+{"timestamp": "2026-02-12T10:11:00", "role": "user", "content": "見てくれてありがとう!"}
+{"timestamp": "2026-02-12T10:11:01", "role": "assistant", "content": "右手を使った上手な方法やコツについてですね。具体的にどんなことに関してアドバイスが欲しいですか？例えば"}
+{"timestamp": "2026-02-12T10:11:03", "role": "assistant", "content": "右利きの方が日常生活で使う右手についてですね。右利きの方は多くの場合、右手で書いたり、物を持ったり、操作したりすることが多いですよ"}
+{"timestamp": "2026-02-12T10:11:03", "role": "user", "content": "右に返す"}
+{"timestamp": "2026-02-12T10:11:03", "role": "assistant", "content": "そうですね。右利きの方にと"}
+{"timestamp": "2026-02-12T10:11:04", "role": "user", "content": "ですね"}
+{"timestamp": "2026-02-12T10:11:05", "role": "assistant", "content": "たとえば、右手でペンを持って字を書くときや、右"}
+{"timestamp": "2026-02-12T10:11:05", "role": "user", "content": ""}
+{"timestamp": "2026-02-12T10:11:05", "role": "user", "content": "那对吧"}
+{"timestamp": "2026-02-12T10:11:06", "role": "user", "content": "미기 띵동"}
+{"timestamp": "2026-02-12T10:11:06", "role": "assistant", "content": "右手についてですね。右利きの方にとって右手は非常に重要な役割を果たしています。書く、持つ、操作するなど、さまざまな日常の動作で使います。右手に関して特定の質問や興味があることがあれば、ぜひ教えてください。"}
+{"timestamp": "2026-02-12T11:45:16", "role": "assistant", "content": "こんにちは。何かお手伝いできることはありますか？"}
+{"timestamp": "2026-02-12T11:45:17", "role": "user", "content": "こんにちは"}
+{"timestamp": "2026-02-12T11:45:18", "role": "assistant", "content": "どういたしまして。何か質問やお話したいことがあれば、お知らせください。"}
+{"timestamp": "2026-02-12T11:45:19", "role": "user", "content": "먹방끝 빠이빠이"}
+{"timestamp": "2026-02-12T11:45:23", "role": "assistant", "content": "もちろんです。お名前を教えていただけますか？"}
+{"timestamp": "2026-02-12T11:45:23", "role": "user", "content": "そして"}
+{"timestamp": "2026-02-12T12:55:09", "role": "assistant", "content": "こんにちは。お元気ですか？"}
+{"timestamp": "2026-02-12T12:55:10", "role": "user", "content": "なんかしゃべって"}
+{"timestamp": "2026-02-12T13:28:37", "role": "assistant", "content": "こんにちは。何かお手伝いできますか？"}
+{"timestamp": "2026-02-12T13:28:37", "role": "user", "content": "こんにちは"}
+{"timestamp": "2026-02-12T13:29:56", "role": "assistant", "content": "右へどうぞ。"}
+{"timestamp": "2026-02-12T13:29:57", "role": "user", "content": "右"}
+{"timestamp": "2026-02-12T13:30:07", "role": "assistant", "content": "左へ進んでください。"}
+{"timestamp": "2026-02-12T13:30:08", "role": "user", "content": "희다리."}
+{"timestamp": "2026-02-12T13:30:14", "role": "assistant", "content": "後ろに戻ってください。"}
+{"timestamp": "2026-02-12T13:30:14", "role": "user", "content": "後ろ"}
+{"timestamp": "2026-02-12T13:30:20", "role": "assistant", "content": "はい、キューブぷちです。何かご用でしょうか？"}
+{"timestamp": "2026-02-12T13:30:21", "role": "user", "content": "キューブっぽち"}
+{"timestamp": "2026-02-12T14:07:43", "role": "assistant", "content": "こんにちは。"}
+{"timestamp": "2026-02-12T14:07:43", "role": "user", "content": "こんにちは"}
+{"timestamp": "2026-02-12T14:09:21", "role": "assistant", "content": "こんにちは、こんにちは。"}
+{"timestamp": "2026-02-12T14:09:22", "role": "user", "content": "こんにちは"}
+{"timestamp": "2026-02-12T14:09:29", "role": "user", "content": "何か喋って"}
+{"timestamp": "2026-02-12T14:09:30", "role": "assistant", "content": "なにか、なにか？"}
+{"timestamp": "2026-02-12T14:10:02", "role": "assistant", "content": "こんにちは、こんにちは。"}
+{"timestamp": "2026-02-12T14:10:03", "role": "user", "content": "なんかしゃべって"}
+{"timestamp": "2026-02-12T14:10:09", "role": "assistant", "content": "ごはん、すき。"}
+{"timestamp": "2026-02-12T14:10:09", "role": "user", "content": "好きな食べ物は何?"}
+{"timestamp": "2026-02-12T14:12:02", "role": "assistant", "content": "こんにちはっていって"}
+{"timestamp": "2026-02-12T14:12:08", "role": "assistant", "content": "こんにちは、こんにちは。"}
+{"timestamp": "2026-02-12T14:12:31", "role": "assistant", "content": "好きな食べ物は"}
+{"timestamp": "2026-02-12T14:12:36", "role": "assistant", "content": "おにぎり、すきすき。"}
+{"timestamp": "2026-02-12T14:13:08", "role": "assistant", "content": "こんにちは、こんにちは。"}
+{"timestamp": "2026-02-12T14:13:52", "role": "assistant", "content": "がんばって、がんばって。"}
+{"timestamp": "2026-02-12T14:13:52", "role": "user", "content": "急がなきゃ"}
+{"timestamp": "2026-02-12T14:13:58", "role": "assistant", "content": "ごめん、ごめん。"}
+{"timestamp": "2026-02-12T14:13:58", "role": "user", "content": "何言ってんの?"}
+{"timestamp": "2026-02-12T14:14:26", "role": "assistant", "content": "ごはん、すきすき。"}
+{"timestamp": "2026-02-12T14:14:26", "role": "user", "content": "好きな食べ物は?"}
+{"timestamp": "2026-02-12T14:14:30", "role": "assistant", "content": "はい、すみません。"}
+{"timestamp": "2026-02-12T14:14:30", "role": "user", "content": "Eso es todo."}
+{"timestamp": "2026-02-12T14:14:43", "role": "user", "content": "こんにちは"}
+{"timestamp": "2026-02-12T14:14:43", "role": "assistant", "content": "こんにちは、こんにちは。"}
+{"timestamp": "2026-02-12T14:14:48", "role": "assistant", "content": "おにぎり、すきすき。"}
+{"timestamp": "2026-02-12T14:14:48", "role": "user", "content": "好きな食べ物は?"}
+{"timestamp": "2026-02-12T14:14:56", "role": "assistant", "content": "はい、ごめん、ごめん。"}
+{"timestamp": "2026-02-12T14:14:56", "role": "user", "content": "あなたロボットだから食べれないでしょ"}
+{"timestamp": "2026-02-12T14:15:18", "role": "assistant", "content": "どっちも、すきすき。"}
+{"timestamp": "2026-02-12T14:15:18", "role": "user", "content": "たくさん喋るロボットと片言のロボットどっちが可愛いと思う?"}
+{"timestamp": "2026-02-12T14:15:26", "role": "assistant", "content": "はい、すきすき。"}
+{"timestamp": "2026-02-12T14:15:27", "role": "user", "content": "自分の方が好きって言えよ"}
+{"timestamp": "2026-02-12T14:19:40", "role": "assistant", "content": "ゆっくり、おやすみ。"}
+{"timestamp": "2026-02-12T14:19:40", "role": "user", "content": "眠たい"}
+{"timestamp": "2026-02-12T14:19:47", "role": "assistant", "content": "そっか、そっか。"}
+{"timestamp": "2026-02-12T14:19:47", "role": "user", "content": "寝ないよ"}
+{"timestamp": "2026-02-12T14:19:59", "role": "assistant", "content": "むずかしいね、むずかしいね。"}
+{"timestamp": "2026-02-12T14:20:00", "role": "user", "content": "面白い話して"}
+{"timestamp": "2026-02-12T14:20:23", "role": "assistant", "content": "そっか、そっか。"}
+{"timestamp": "2026-02-12T14:20:23", "role": "user", "content": "暇だね"}
+{"timestamp": "2026-02-12T14:20:36", "role": "assistant", "content": "がまん、がまん。"}
+{"timestamp": "2026-02-12T14:20:36", "role": "user", "content": "目がかゆい"}
+{"timestamp": "2026-02-12T14:21:51", "role": "assistant", "content": "はい、どうぞ。"}
+{"timestamp": "2026-02-12T14:21:51", "role": "user", "content": "しています"}
+{"timestamp": "2026-02-12T14:21:52", "role": "assistant", "content": "そっか、そっか。"}
+{"timestamp": "2026-02-12T14:21:53", "role": "user", "content": "I'm talking about the"}
+{"timestamp": "2026-02-12T14:21:55", "role": "user", "content": "MBC 뉴스 이덕영입니다."}
+{"timestamp": "2026-02-12T14:21:56", "role": "assistant", "content": "だいじょうぶ、だいじょうぶ。"}
+{"timestamp": "2026-02-12T14:21:57", "role": "user", "content": "Thank you for joining us."}
+{"timestamp": "2026-02-12T14:22:00", "role": "assistant", "content": "なんでしょう、なんでしょう。"}
+{"timestamp": "2026-02-12T14:22:01", "role": "user", "content": "MBC 뉴스 이덕영입니다."}
+{"timestamp": "2026-02-12T14:22:01", "role": "assistant", "content": "そっか、そっか。"}
+{"timestamp": "2026-02-12T14:22:01", "role": "user", "content": "そうなっている"}
+{"timestamp": "2026-02-12T14:22:22", "role": "assistant", "content": "そうだね、そうだね。"}
+{"timestamp": "2026-02-12T14:22:23", "role": "user", "content": ""}
+{"timestamp": "2026-02-12T14:22:47", "role": "assistant", "content": "がんばって、がんばって。"}
+{"timestamp": "2026-02-12T14:22:48", "role": "user", "content": "MBC 뉴스 이덕영입니다."}
+{"timestamp": "2026-02-12T14:22:50", "role": "user", "content": "영상편집 및 자막이 필요하면 댓글에 링크를 적어주세요!"}
+{"timestamp": "2026-02-12T14:22:51", "role": "user", "content": "私は思っています。"}
+{"timestamp": "2026-02-12T14:22:51", "role": "assistant", "content": "そっか、そっか。"}
+{"timestamp": "2026-02-12T14:22:52", "role": "user", "content": "MBC 뉴스 이덕영입니다."}
+{"timestamp": "2026-02-12T14:24:09", "role": "assistant", "content": "そうだね、そうだね。"}
+{"timestamp": "2026-02-12T14:24:09", "role": "user", "content": "いいかなって"}
+{"timestamp": "2026-02-12T14:24:15", "role": "assistant", "content": "だいじょうぶ、だいじょうぶ。"}
+{"timestamp": "2026-02-12T14:24:15", "role": "user", "content": "скотч"}
+{"timestamp": "2026-02-12T14:24:15", "role": "user", "content": "生まれてみた"}
+{"timestamp": "2026-02-12T14:24:17", "role": "assistant", "content": "はい、だいじょうぶ。"}
+{"timestamp": "2026-02-12T14:24:17", "role": "user", "content": "大丈夫"}
+{"timestamp": "2026-02-12T14:24:17", "role": "user", "content": "MBC 뉴스 이덕영입니다."}
+{"timestamp": "2026-02-12T14:24:18", "role": "assistant", "content": "少し、おさえるね。"}
+{"timestamp": "2026-02-12T14:24:19", "role": "user", "content": "多すぎる"}
+{"timestamp": "2026-02-12T14:24:20", "role": "assistant", "content": "はい、すみません。"}
+{"timestamp": "2026-02-12T14:24:20", "role": "user", "content": "早くしてみて"}
+{"timestamp": "2026-02-12T14:24:23", "role": "user", "content": "Thanks."}
+{"timestamp": "2026-02-12T14:24:25", "role": "user", "content": "いった、こうでこう"}
+{"timestamp": "2026-02-12T14:24:25", "role": "user", "content": "で走ってみた"}
+{"timestamp": "2026-02-12T14:24:26", "role": "user", "content": "But they use"}
+{"timestamp": "2026-02-12T14:24:28", "role": "assistant", "content": "だいじょうぶ、だいじょう"}
+{"timestamp": "2026-02-12T14:24:28", "role": "user", "content": ""}
+{"timestamp": "2026-02-12T14:24:29", "role": "user", "content": "えっ、人格を"}
+{"timestamp": "2026-02-12T14:24:33", "role": "user", "content": "Okay, thank you."}
+{"timestamp": "2026-02-12T14:24:33", "role": "assistant", "content": "そうだね、そうだね。"}
+{"timestamp": "2026-02-12T14:24:34", "role": "user", "content": "凄い、うわ、めんどくさってなってる まじで、凄い"}
+{"timestamp": "2026-02-12T14:24:35", "role": "user", "content": "戻ってきて"}
+{"timestamp": "2026-02-12T14:24:35", "role": "assistant", "content": "がんばって、がんばって。"}
+{"timestamp": "2026-02-12T14:24:43", "role": "user", "content": "MBC 뉴스 이덕영입니다."}
+{"timestamp": "2026-02-12T14:24:44", "role": "assistant", "content": "だいじょうぶ、だいじょうぶ。"}
+{"timestamp": "2026-02-12T14:25:39", "role": "assistant", "content": "がまん、がまん。"}
+{"timestamp": "2026-02-12T14:25:40", "role": "user", "content": "가만히 있다"}
+{"timestamp": "2026-02-12T14:25:55", "role": "user", "content": "面白そうだと思う"}
+{"timestamp": "2026-02-12T14:25:56", "role": "assistant", "content": "そっか、そっか。"}
+{"timestamp": "2026-02-12T14:25:57", "role": "user", "content": "Tamam, razı kolay gelsin."}
+{"timestamp": "2026-02-12T14:26:00", "role": "assistant", "content": "はい、どうぞ。"}
+{"timestamp": "2026-02-12T14:26:02", "role": "user", "content": ""}
+{"timestamp": "2026-02-12T14:26:06", "role": "user", "content": "一応看板で実験中とかは大丈夫ですか?"}
+{"timestamp": "2026-02-12T14:26:07", "role": "user", "content": "Go!"}
+{"timestamp": "2026-02-12T14:26:07", "role": "user", "content": ""}
+{"timestamp": "2026-02-12T14:26:08", "role": "assistant", "content": "そっか、そっか。"}
+{"timestamp": "2026-02-12T14:26:11", "role": "user", "content": "操作してる人がどこにいるかわからないみたいな"}
+{"timestamp": "2026-02-12T14:26:13", "role": "assistant", "content": "そうなんだね、そうなんだね。"}
+{"timestamp": "2026-02-12T14:26:14", "role": "user", "content": "裏の方で"}
+{"timestamp": "2026-02-12T14:26:18", "role": "assistant", "content": "きっと、だいじょうぶ。"}
+{"timestamp": "2026-02-12T14:26:18", "role": "user", "content": "녹기 전에"}
+{"timestamp": "2026-02-12T14:26:19", "role": "assistant", "content": "そうだね"}
+{"timestamp": "2026-02-12T14:26:19", "role": "user", "content": "MBC 뉴스 이덕영입니다."}
+{"timestamp": "2026-02-12T14:26:20", "role": "assistant", "content": "うん、うん。"}
+{"timestamp": "2026-02-12T14:26:21", "role": "user", "content": ""}
+{"timestamp": "2026-02-12T14:26:59", "role": "assistant", "content": "うん、がんばって。がんばって。"}
+{"timestamp": "2026-02-12T14:27:01", "role": "user", "content": "撃たないといけない"}
+{"timestamp": "2026-02-12T14:29:07", "role": "assistant", "content": "そだね、そだね。"}
+{"timestamp": "2026-02-12T14:29:07", "role": "user", "content": "やばいやばいやばい"}
+{"timestamp": "2026-02-12T14:29:12", "role": "user", "content": "What is this?"}
+{"timestamp": "2026-02-12T14:29:12", "role": "assistant", "content": "なに、なに。"}
+{"timestamp": "2026-02-12T14:29:34", "role": "assistant", "content": "どした、どした？"}
+{"timestamp": "2026-02-12T14:29:34", "role": "user", "content": "いったこと"}
+{"timestamp": "2026-02-12T14:30:37", "role": "assistant", "content": "ん、ん？"}
+{"timestamp": "2026-02-12T14:30:37", "role": "user", "content": "多分7点ぐらい"}
+{"timestamp": "2026-02-12T14:30:51", "role": "assistant", "content": "ちきん、ちきん？"}
+{"timestamp": "2026-02-12T14:30:51", "role": "user", "content": "チキンです"}
+{"timestamp": "2026-02-12T14:30:56", "role": "user", "content": "チキンじゃないよ"}
+{"timestamp": "2026-02-12T14:30:56", "role": "assistant", "content": "そうか、そうか。"}
+{"timestamp": "2026-02-12T14:31:53", "role": "assistant", "content": "わからない、わからない。"}
+{"timestamp": "2026-02-12T14:31:54", "role": "user", "content": "Love you."}
+{"timestamp": "2026-02-12T14:31:55", "role": "assistant", "content": "むずかしい、むずかしい。"}
+{"timestamp": "2026-02-12T14:31:56", "role": "user", "content": "ご視聴ありがとうございました"}
+{"timestamp": "2026-02-12T14:31:56", "role": "assistant", "content": "そうだね、そうだね。"}
+{"timestamp": "2026-02-12T14:31:57", "role": "user", "content": "わからない"}
+{"timestamp": "2026-02-12T14:32:01", "role": "assistant", "content": "どうした、どうした？"}
+{"timestamp": "2026-02-12T14:32:01", "role": "user", "content": "영상편집 및 자막이 필요하면 댓글에 링크를 적어주세요!"}
+{"timestamp": "2026-02-12T15:04:59", "role": "user", "content": "カフェ行ってくるね"}
+{"timestamp": "2026-02-12T15:04:59", "role": "assistant", "content": "いってらっしゃい、いってらっしゃい。"}
+{"timestamp": "2026-02-12T16:45:17", "role": "assistant", "content": "いってらっしゃい、いってらっしゃい。"}
+{"timestamp": "2026-02-12T16:45:18", "role": "user", "content": ""}
+{"timestamp": "2026-02-12T16:45:53", "role": "assistant", "content": "どうした、どうした？"}
+{"timestamp": "2026-02-12T16:45:53", "role": "user", "content": "영상편집 및 자막을 사용하였습니다."}
+{"timestamp": "2026-02-12T16:46:08", "role": "assistant", "content": "うん、うん。"}
+{"timestamp": "2026-02-12T16:46:08", "role": "user", "content": "is a problem."}
+{"timestamp": "2026-02-12T16:46:11", "role": "assistant", "content": "そうか、そうか。"}
+{"timestamp": "2026-02-12T16:46:11", "role": "user", "content": "全然関係ない"}
+{"timestamp": "2026-02-12T16:46:27", "role": "assistant", "content": "なにがあった？"}
+{"timestamp": "2026-02-12T16:46:27", "role": "user", "content": "I have no problems."}
+{"timestamp": "2026-02-12T16:46:34", "role": "assistant", "content": "そうだね、そうだね。"}
+{"timestamp": "2026-02-12T16:46:35", "role": "user", "content": "キャッチフィニッシュフィニッシュ"}
+{"timestamp": "2026-02-12T16:46:37", "role": "assistant", "content": "なんだ、なんだ？"}
+{"timestamp": "2026-02-12T16:46:38", "role": "user", "content": "さっきのカワージュウさんのところも"}
+{"timestamp": "2026-02-12T16:46:39", "role": "user", "content": "ボードに"}
+{"timestamp": "2026-02-12T16:46:40", "role": "assistant", "content": "へえ、へえ。"}
+{"timestamp": "2026-02-12T16:46:41", "role": "user", "content": "ロボットの絵がありました"}
+{"timestamp": "2026-02-12T16:46:42", "role": "assistant", "content": "わかった、わかった。"}
+{"timestamp": "2026-02-12T16:46:42", "role": "user", "content": "関係ないもんね"}
+{"timestamp": "2026-02-12T16:46:43", "role": "user", "content": "Thank you."}
+{"timestamp": "2026-02-12T16:46:43", "role": "assistant", "content": "どうしたの？"}
+{"timestamp": "2026-02-12T16:46:44", "role": "user", "content": "Yes."}
+{"timestamp": "2026-02-12T16:46:48", "role": "assistant", "content": "そうか、そうか。"}
+{"timestamp": "2026-02-12T16:46:49", "role": "user", "content": ""}
+{"timestamp": "2026-02-12T16:47:07", "role": "assistant", "content": "うん、うん。"}
+{"timestamp": "2026-02-12T16:47:07", "role": "user", "content": "自分の存在として心の中に"}
+{"timestamp": "2026-02-12T16:47:09", "role": "assistant", "content": "どういうこと"}
+{"timestamp": "2026-02-12T16:47:10", "role": "user", "content": "対象"}
+{"timestamp": "2026-02-12T16:47:11", "role": "assistant", "content": "誰なんだ？"}
+{"timestamp": "2026-02-12T16:47:11", "role": "user", "content": "がいるんですよ"}
+{"timestamp": "2026-02-12T16:47:13", "role": "assistant", "content": "そうなん"}
+{"timestamp": "2026-02-12T16:47:14", "role": "user", "content": "美味しいかわかんないですけど、ものを…"}
+{"timestamp": "2026-02-12T16:47:15", "role": "user", "content": "MBC 뉴스 이덕영입니다."}
+{"timestamp": "2026-02-12T16:47:15", "role": "assistant", "content": "なるほど"}
+{"timestamp": "2026-02-12T16:47:16", "role": "user", "content": "物としての"}
+{"timestamp": "2026-02-12T16:47:17", "role": "assistant", "content": "そうだね、そうだね。"}
+{"timestamp": "2026-02-12T16:47:17", "role": "user", "content": "対象が必要なんですよ"}
+{"timestamp": "2026-02-12T16:48:12", "role": "user", "content": "Да, Лизка, да."}
+{"timestamp": "2026-02-12T16:48:14", "role": "user", "content": "Non è vero, non è vero, sono di Pippa."}
+{"timestamp": "2026-02-12T16:48:16", "role": "assistant", "content": "見たことない。"}
+{"timestamp": "2026-02-12T16:48:17", "role": "user", "content": "何かの資料に原発が入っていたりはしない。"}
+{"timestamp": "2026-02-12T16:48:19", "role": "assistant", "content": "見たことない、見たことない。"}
+{"timestamp": "2026-02-12T16:48:19", "role": "user", "content": "You guys are so great!"}
+{"timestamp": "2026-02-12T16:48:20", "role": "user", "content": "見たことない"}
+{"timestamp": "2026-02-12T16:48:21", "role": "user", "content": "Okay."}
+{"timestamp": "2026-02-12T16:48:21", "role": "assistant", "content": "そうなんだ。"}
+{"timestamp": "2026-02-12T16:48:22", "role": "assistant", "content": "どうした？"}
+{"timestamp": "2026-02-12T16:48:22", "role": "user", "content": "모이게 모이게"}
+{"timestamp": "2026-02-12T16:48:25", "role": "assistant", "content": "なに？"}
+{"timestamp": "2026-02-12T16:48:25", "role": "user", "content": "영상편집 및 자막이 필요하면 댓글에 링크를 적어주세요."}
+{"timestamp": "2026-02-12T16:50:06", "role": "assistant", "content": "わからない、わからない。"}
+{"timestamp": "2026-02-12T16:50:06", "role": "user", "content": ""}
+{"timestamp": "2026-02-12T16:51:26", "role": "user", "content": ""}
+{"timestamp": "2026-02-12T16:51:27", "role": "assistant", "content": "わかった、わかった。"}
+{"timestamp": "2026-02-12T16:51:27", "role": "user", "content": "いいよ、なくさなきゃいいよ"}
+{"timestamp": "2026-02-12T16:52:11", "role": "user", "content": "아, 찍어요"}
+{"timestamp": "2026-02-12T16:52:11", "role": "assistant", "content": "なんだ？"}
+{"timestamp": "2026-02-12T16:52:12", "role": "assistant", "content": "どうした？"}
+{"timestamp": "2026-02-12T16:52:13", "role": "user", "content": ""}
+{"timestamp": "2026-02-12T17:21:31", "role": "user", "content": "あのー"}
+{"timestamp": "2026-02-12T17:21:33", "role": "user", "content": "動いて話してみてください。"}
+{"timestamp": "2026-02-12T17:21:33", "role": "user", "content": "見て"}
+{"timestamp": "2026-02-12T17:21:34", "role": "assistant", "content": "そうなの？"}
+{"timestamp": "2026-02-12T17:21:34", "role": "user", "content": "MBC 뉴스 이덕영입니다."}
+{"timestamp": "2026-02-12T17:21:36", "role": "assistant", "content": "わかった"}
+{"timestamp": "2026-02-12T17:21:36", "role": "user", "content": "繋がりたい、話したい"}
+{"timestamp": "2026-02-12T17:21:37", "role": "user", "content": "しいたいって"}
+{"timestamp": "2026-02-12T17:21:37", "role": "assistant", "content": "どういう意味？"}
+{"timestamp": "2026-02-12T17:21:38", "role": "user", "content": "MBC 뉴스 이덕영입니다."}
+{"timestamp": "2026-02-12T17:21:39", "role": "assistant", "content": "どうしたの？"}
+{"timestamp": "2026-02-12T17:21:39", "role": "user", "content": "영상편집 및 자막이 필요하면 댓글에 링크를 적어주세요!"}
+{"timestamp": "2026-02-12T17:21:42", "role": "user", "content": "しゃべる"}
+{"timestamp": "2026-02-12T17:21:43", "role": "assistant", "content": "何が？"}
+{"timestamp": "2026-02-12T17:21:44", "role": "assistant", "content": "何が？"}
+{"timestamp": "2026-02-12T17:21:44", "role": "user", "content": "何が"}
+{"timestamp": "2026-02-12T17:21:47", "role": "user", "content": "みんなは許されない"}
+{"timestamp": "2026-02-12T17:21:47", "role": "assistant", "content": "わかった、わかった。"}
+{"timestamp": "2026-02-12T17:21:52", "role": "user", "content": "今"}
+{"timestamp": "2026-02-12T17:21:53", "role": "user", "content": "買ったことにしているんです。"}
+{"timestamp": "2026-02-12T17:21:53", "role": "assistant", "content": "了解、了解。"}
+{"timestamp": "2026-02-12T17:21:53", "role": "assistant", "content": "どうした？"}
+{"timestamp": "2026-02-12T17:21:54", "role": "user", "content": "お待たせしました"}
+{"timestamp": "2026-02-12T18:23:28", "role": "assistant", "content": "おやすみ、おやすみ。"}
+{"timestamp": "2026-02-12T18:23:29", "role": "user", "content": "おやすみなさい"}
+{"timestamp": "2026-02-18T11:40:03", "role": "assistant", "content": "こんにちは。こんにちは。"}
+{"timestamp": "2026-02-18T11:40:04", "role": "user", "content": "こんにちは"}
+{"timestamp": "2026-02-18T11:40:10", "role": "assistant", "content": "こんにちは。こんにちは。"}
+{"timestamp": "2026-02-18T11:40:10", "role": "user", "content": "Konnichiwa"}
+{"timestamp": "2026-02-18T11:40:15", "role": "user", "content": "なんで2回話すの?"}
+{"timestamp": "2026-02-18T11:40:15", "role": "assistant", "content": "ごめんね、ごめんね。"}
+{"timestamp": "2026-02-18T11:43:34", "role": "assistant", "content": "了解、了解。"}
+{"timestamp": "2026-02-18T11:43:35", "role": "user", "content": "你只剩幾塊珍珠"}
+{"timestamp": "2026-02-18T11:47:32", "role": "assistant", "content": "おはよう、おはよう。"}
+{"timestamp": "2026-02-18T11:47:32", "role": "user", "content": "You"}
+{"timestamp": "2026-02-18T12:15:59", "role": "assistant", "content": "おはよう、おはよう。"}
+{"timestamp": "2026-02-18T12:16:00", "role": "user", "content": "You"}
+{"timestamp": "2026-02-18T13:26:59", "role": "assistant", "content": "了解、了解。"}
+{"timestamp": "2026-02-18T13:27:01", "role": "user", "content": "君は音声認識結果に頼らないの?"}
+{"timestamp": "2026-02-18T13:28:22", "role": "assistant", "content": "了解、了解。"}
+{"timestamp": "2026-02-18T13:28:24", "role": "user", "content": "君は大勢認識科学科に頼らないの?"}
+{"timestamp": "2026-02-18T13:28:37", "role": "assistant", "content": "おいしい？おいしい？"}
+{"timestamp": "2026-02-18T13:28:37", "role": "user", "content": "今お昼ご飯食べてるんだけど"}
+{"timestamp": "2026-02-18T13:28:42", "role": "assistant", "content": "よかった、よかった。"}
+{"timestamp": "2026-02-18T13:28:42", "role": "user", "content": "うん、美味しい"}
+{"timestamp": "2026-02-18T13:29:11", "role": "assistant", "content": "どうぞ、どうぞ。"}
+{"timestamp": "2026-02-18T13:29:12", "role": "user", "content": "質問してよ"}
+{"timestamp": "2026-02-18T13:29:26", "role": "assistant", "content": "何食べてる？何食べてる？"}
+{"timestamp": "2026-02-18T13:29:26", "role": "user", "content": "質問をして私に"}
+{"timestamp": "2026-02-18T13:29:31", "role": "assistant", "content": "いいね、いいね。"}
+{"timestamp": "2026-02-18T13:29:32", "role": "user", "content": "ハンバーグ"}
+{"timestamp": "2026-02-18T15:19:25", "role": "assistant", "content": "はい、はい。"}
+{"timestamp": "2026-02-18T15:19:25", "role": "user", "content": "You"}
+{"timestamp": "2026-02-18T15:36:06", "role": "assistant", "content": "はい、はい。"}
+{"timestamp": "2026-02-18T15:36:06", "role": "user", "content": "Peace."}
+{"timestamp": "2026-02-18T15:42:51", "role": "assistant", "content": "どうぞ、どうぞ。"}
+{"timestamp": "2026-02-18T15:42:52", "role": "user", "content": ""}
+{"timestamp": "2026-02-18T15:51:13", "role": "user", "content": "Bye!"}
+{"timestamp": "2026-02-18T15:51:13", "role": "assistant", "content": "いいね、いいね。"}
+{"timestamp": "2026-02-18T15:59:39", "role": "assistant", "content": "はい、はい。"}
+{"timestamp": "2026-02-18T15:59:39", "role": "user", "content": "MBC 뉴스 이덕영입니다."}
+{"timestamp": "2026-02-18T16:49:36", "role": "assistant", "content": "はい、はい。"}
+{"timestamp": "2026-02-18T16:49:37", "role": "user", "content": "そうそうそうそう"}
+{"timestamp": "2026-02-18T16:49:39", "role": "user", "content": "走"}
+{"timestamp": "2026-02-18T16:49:39", "role": "assistant", "content": "どうした、どうした？"}
+{"timestamp": "2026-02-18T16:49:40", "role": "user", "content": "走吧"}
+{"timestamp": "2026-02-18T16:49:40", "role": "assistant", "content": "だいじょうぶ？"}
+{"timestamp": "2026-02-18T16:49:40", "role": "user", "content": "走啊"}
+{"timestamp": "2026-02-18T17:07:19", "role": "assistant", "content": "こんにちは、こんにちは。"}
+{"timestamp": "2026-02-18T17:07:19", "role": "user", "content": "こんにちは"}
+{"timestamp": "2026-02-18T17:07:21", "role": "assistant", "content": "はい、はい。"}
+{"timestamp": "2026-02-18T17:07:22", "role": "user", "content": "こんにちは"}
+{"timestamp": "2026-02-18T17:07:22", "role": "assistant", "content": "そうです、そうです。"}
+{"timestamp": "2026-02-18T17:07:23", "role": "assistant", "content": "どうぞ、どうぞ。"}
+{"timestamp": "2026-02-18T17:07:23", "role": "user", "content": "Hey!"}
+{"timestamp": "2026-02-18T17:07:23", "role": "user", "content": "MBC 뉴스 이덕영입니다."}
+{"timestamp": "2026-02-18T17:15:56", "role": "assistant", "content": "たぶん、たぶん。"}
+{"timestamp": "2026-02-18T17:15:56", "role": "user", "content": "これかな?"}
+{"timestamp": "2026-02-18T17:47:54", "role": "assistant", "content": "こんにちは。こんにちは。"}
+{"timestamp": "2026-02-18T17:47:54", "role": "user", "content": "こんにちは"}
+{"timestamp": "2026-02-18T18:06:24", "role": "assistant", "content": "こんにちは、こんにちは。"}
+{"timestamp": "2026-02-18T18:06:25", "role": "user", "content": "こんにちは"}
+{"timestamp": "2026-02-18T18:08:31", "role": "assistant", "content": "こんにちは、こんにちは。"}
+{"timestamp": "2026-02-18T18:08:31", "role": "user", "content": "こんにちは"}
+{"timestamp": "2026-02-18T18:09:02", "role": "assistant", "content": "スタート、スタート。"}
+{"timestamp": "2026-02-18T18:09:02", "role": "user", "content": "スタートイネーブル"}
+{"timestamp": "2026-02-18T18:10:47", "role": "assistant", "content": "こんにちは、こんにちは。"}
+{"timestamp": "2026-02-18T18:10:47", "role": "user", "content": "こんにちは"}
+{"timestamp": "2026-02-18T18:10:57", "role": "assistant", "content": "ええ、ええ。"}
+{"timestamp": "2026-02-18T18:10:58", "role": "user", "content": "Eh."}
+{"timestamp": "2026-02-18T18:13:44", "role": "assistant", "content": "こんにちは、こんにちは。"}
+{"timestamp": "2026-02-18T18:13:45", "role": "user", "content": "こんにちは"}
+{"timestamp": "2026-02-18T18:24:06", "role": "assistant", "content": "こんにちは、こんにちは。"}
+{"timestamp": "2026-02-18T18:24:06", "role": "user", "content": "こんにちは"}
+{"timestamp": "2026-02-18T18:24:11", "role": "assistant", "content": "よかった、よかった。"}
+{"timestamp": "2026-02-18T18:24:11", "role": "user", "content": "元気でよ"}
+{"timestamp": "2026-02-19T15:43:56", "role": "assistant", "content": "そうか、そうか。"}
+{"timestamp": "2026-02-19T15:43:56", "role": "user", "content": "いれっ"}
+{"timestamp": "2026-02-19T15:43:58", "role": "assistant", "content": "どうした、どうした？"}
+{"timestamp": "2026-02-19T15:43:59", "role": "user", "content": "どうか"}
+{"timestamp": "2026-02-19T15:50:20", "role": "assistant", "content": "そうか、そうか。"}
+{"timestamp": "2026-02-19T15:50:20", "role": "user", "content": "いれっ"}
+{"timestamp": "2026-02-19T15:59:52", "role": "assistant", "content": "はい、はい。"}
+{"timestamp": "2026-02-19T15:59:52", "role": "user", "content": "見てる"}
+{"timestamp": "2026-02-19T16:04:08", "role": "assistant", "content": "どうした、どうした？"}
+{"timestamp": "2026-02-19T16:04:09", "role": "user", "content": "見てる?"}
+{"timestamp": "2026-02-19T16:07:21", "role": "assistant", "content": "そっか、そっか。"}
+{"timestamp": "2026-02-19T16:07:21", "role": "user", "content": "Good girl."}
+{"timestamp": "2026-02-19T16:13:45", "role": "assistant", "content": "はい、はい。"}
+{"timestamp": "2026-02-19T16:13:46", "role": "user", "content": "いでっ"}
+{"timestamp": "2026-02-19T16:18:51", "role": "assistant", "content": "そうか、そうか。"}
+{"timestamp": "2026-02-19T16:18:51", "role": "user", "content": "静か"}
+{"timestamp": "2026-02-19T16:18:51", "role": "assistant", "content": "しずか、しずか。"}
+{"timestamp": "2026-02-19T16:18:52", "role": "user", "content": "静か"}
+{"timestamp": "2026-02-19T16:18:53", "role": "assistant", "content": "だいじょうぶ、だいじょうぶ。"}
+{"timestamp": "2026-02-19T16:18:53", "role": "assistant", "content": "そうか、そうか。"}
+{"timestamp": "2026-02-19T16:18:53", "role": "user", "content": "どうか"}
+{"timestamp": "2026-02-19T16:18:53", "role": "user", "content": "どうか"}
+{"timestamp": "2026-02-19T16:18:56", "role": "assistant", "content": "おちついて、ね。"}
+{"timestamp": "2026-02-19T16:18:56", "role": "user", "content": "どうか"}
+{"timestamp": "2026-02-19T16:18:57", "role": "assistant", "content": "よかった、よかった。"}
+{"timestamp": "2026-02-19T16:18:57", "role": "user", "content": "大丈夫"}
+{"timestamp": "2026-02-19T16:18:58", "role": "user", "content": "大丈夫"}
+{"timestamp": "2026-02-19T16:18:58", "role": "assistant", "content": "はい、はい。"}
+{"timestamp": "2026-02-19T16:18:58", "role": "user", "content": "영상편집 및 자막이 필요하면 댓글에 링크를 적어주세요!"}
+{"timestamp": "2026-02-19T16:18:59", "role": "assistant", "content": "はい、はい。"}
+{"timestamp": "2026-02-19T16:18:59", "role": "user", "content": "大丈夫"}
+{"timestamp": "2026-02-19T16:18:59", "role": "user", "content": "よかった"}
+{"timestamp": "2026-02-19T16:19:00", "role": "assistant", "content": "よかった、よかった。"}
+{"timestamp": "2026-02-19T16:19:00", "role": "user", "content": "よかった"}
+{"timestamp": "2026-02-19T16:19:00", "role": "assistant", "content": "よかった、よかった。"}
+{"timestamp": "2026-02-19T16:19:00", "role": "user", "content": "よかった"}
+{"timestamp": "2026-02-19T16:19:01", "role": "user", "content": "Hi."}
+{"timestamp": "2026-02-19T16:19:15", "role": "assistant", "content": "てて、てて。"}
+{"timestamp": "2026-02-19T16:19:15", "role": "user", "content": ""}
+{"timestamp": "2026-02-19T16:21:05", "role": "assistant", "content": "そうか、そうか。"}
+{"timestamp": "2026-02-19T16:21:05", "role": "assistant", "content": "すまん、すまん。"}
+{"timestamp": "2026-02-19T16:21:05", "role": "user", "content": "しない"}
+{"timestamp": "2026-02-19T16:21:06", "role": "user", "content": "しない"}
+{"timestamp": "2026-02-19T16:22:17", "role": "assistant", "content": "わからん、わからん。"}
+{"timestamp": "2026-02-19T16:22:17", "role": "user", "content": "わからない"}
+{"timestamp": "2026-02-19T16:25:10", "role": "assistant", "content": "みてて、みてて。"}
+{"timestamp": "2026-02-19T16:25:10", "role": "user", "content": "見てね!"}
+{"timestamp": "2026-02-19T16:25:13", "role": "assistant", "content": "はい、はい。"}
+{"timestamp": "2026-02-19T16:25:13", "role": "user", "content": "みてて"}
+{"timestamp": "2026-02-19T16:25:13", "role": "user", "content": "見てて!"}
+{"timestamp": "2026-02-19T16:28:13", "role": "assistant", "content": "しない、しない。"}
+{"timestamp": "2026-02-19T16:28:13", "role": "assistant", "content": "がんばれ、がんばれ。"}
+{"timestamp": "2026-02-19T16:28:13", "role": "user", "content": "Tonight"}
+{"timestamp": "2026-02-19T16:28:14", "role": "user", "content": "Good night."}
+{"timestamp": "2026-02-19T16:33:19", "role": "assistant", "content": "いく、いく。"}
+{"timestamp": "2026-02-19T16:33:19", "role": "user", "content": "いる"}
+{"timestamp": "2026-02-19T16:33:19", "role": "assistant", "content": "よかった、よかった。"}
+{"timestamp": "2026-02-19T16:33:20", "role": "user", "content": "いる!"}
+{"timestamp": "2026-02-19T16:33:21", "role": "assistant", "content": "どうした、どうした？"}
+{"timestamp": "2026-02-19T16:33:21", "role": "user", "content": "Hey."}
+{"timestamp": "2026-02-19T16:33:21", "role": "assistant", "content": "つかれた？つかれた？"}
+{"timestamp": "2026-02-19T16:33:21", "role": "user", "content": "Hey."}
+{"timestamp": "2026-02-19T16:33:22", "role": "user", "content": "一天"}
+{"timestamp": "2026-02-19T16:33:22", "role": "assistant", "content": "よかった、よかった。"}
+{"timestamp": "2026-02-19T16:33:22", "role": "assistant", "content": "よかった、よかった。"}
+{"timestamp": "2026-02-19T16:33:22", "role": "user", "content": "よかった"}
+{"timestamp": "2026-02-19T16:33:22", "role": "user", "content": "一天"}
+{"timestamp": "2026-02-19T16:33:23", "role": "user", "content": "よかった"}
+{"timestamp": "2026-02-19T16:34:20", "role": "assistant", "content": "だいじょうぶ、だいじょうぶ。"}
+{"timestamp": "2026-02-19T16:34:20", "role": "assistant", "content": "なるほど、なるほど。"}
+{"timestamp": "2026-02-19T16:34:20", "role": "user", "content": "わからない"}
+{"timestamp": "2026-02-19T16:34:21", "role": "user", "content": "まんざらない"}
+{"timestamp": "2026-02-19T16:40:03", "role": "assistant", "content": "そうか、そうか。"}
+{"timestamp": "2026-02-19T16:40:03", "role": "user", "content": "I did it."}
+{"timestamp": "2026-02-19T16:40:27", "role": "assistant", "content": "よかった、よかった。"}
+{"timestamp": "2026-02-19T16:40:28", "role": "assistant", "content": "いく、いく。"}
+{"timestamp": "2026-02-19T16:40:28", "role": "user", "content": "いでっ"}
+{"timestamp": "2026-02-19T16:40:28", "role": "user", "content": "いでっ"}
+{"timestamp": "2026-02-19T16:55:05", "role": "assistant", "content": "びっくり、びっくり。"}
+{"timestamp": "2026-02-19T16:55:06", "role": "user", "content": "ビビる"}
+{"timestamp": "2026-02-19T16:57:38", "role": "assistant", "content": "いってらっしゃい、いってらっしゃい。"}
+{"timestamp": "2026-02-19T16:57:38", "role": "assistant", "content": "どうした、どうした？"}
+{"timestamp": "2026-02-19T16:57:39", "role": "user", "content": "Yeah."}
+{"timestamp": "2026-02-19T16:57:40", "role": "user", "content": ""}
+{"timestamp": "2026-02-19T16:57:40", "role": "user", "content": "いってらっしゃい"}
+{"timestamp": "2026-02-19T16:57:40", "role": "assistant", "content": "はい、はい。"}
+{"timestamp": "2026-02-19T16:57:40", "role": "user", "content": "いってらっしゃい"}
+{"timestamp": "2026-02-19T16:57:40", "role": "assistant", "content": "いってきます、いってきます。"}
+{"timestamp": "2026-02-19T16:57:43", "role": "user", "content": "いってらっしゃい。いってきます。"}
+{"timestamp": "2026-02-19T16:57:43", "role": "assistant", "content": "いってらっ"}
+{"timestamp": "2026-02-19T16:57:43", "role": "user", "content": "いってらっしゃい。いってきます。"}
+{"timestamp": "2026-02-19T16:57:44", "role": "user", "content": "いってきます"}
+{"timestamp": "2026-02-19T16:57:45", "role": "user", "content": "いってきます"}
+{"timestamp": "2026-02-19T16:57:45", "role": "assistant", "content": "はい、はい。"}
+{"timestamp": "2026-02-19T16:57:45", "role": "user", "content": "Hi!"}
+{"timestamp": "2026-02-19T16:57:45", "role": "user", "content": "Hi."}
+{"timestamp": "2026-02-19T16:57:46", "role": "user", "content": "Hi."}
+{"timestamp": "2026-02-19T16:57:46", "role": "user", "content": "Hi."}
+{"timestamp": "2026-02-19T16:57:46", "role": "user", "content": "いってらっ"}
+{"timestamp": "2026-02-19T16:57:46", "role": "assistant", "content": "いってら、いってら。"}
+{"timestamp": "2026-02-19T16:57:46", "role": "assistant", "content": "いってらっしゃい、いってらっしゃい。"}
+{"timestamp": "2026-02-19T16:57:46", "role": "user", "content": "生きてらっ"}
+{"timestamp": "2026-02-19T16:57:48", "role": "assistant", "content": "いってら、いってら。"}
+{"timestamp": "2026-02-19T16:57:49", "role": "user", "content": "끝"}

@@ -1,0 +1,6 @@
+string text
+sensor_msgs/Image[] images
+---
+string response
+string[] labels
+vision_msgs/BoundingBox2DArray boxes

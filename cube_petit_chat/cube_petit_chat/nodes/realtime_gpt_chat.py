@@ -35,14 +35,15 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 from rclpy.task import Future
-from sbgisen_speech.lib.constants import ACTION_SERVER_SPEECH
-from sbgisen_speech_msgs.action import Speech
+# from sbgisen_speech_msgs.action import Speech
 import sounddevice
 from std_msgs.msg import String
 from std_srvs.srv import SetBool
 import websockets
 from websockets.protocol import State
 import yaml
+from datetime import datetime
+from cube_petit_speech_msgs.action import Speech
 
 from cube_petit_chat_msgs.srv import AddContext
 
@@ -137,6 +138,11 @@ class RealtimeGPTChat(Node):
         self.audio_info_msg.coding_format = 'PCM'
         self.audio_data_msg = AudioDataStamped()
 
+        self.input_mic_publisher = None
+        if not self.use_input_topic:
+            self.input_mic_publisher = self.create_publisher(AudioDataStamped, 'mic_audio_stamped', 10)
+        self.human_voice_publisher = self.create_publisher(AudioDataStamped, 'human_voice_stamped', 10)
+
         self._waiting_status_timer: Optional[rclpy.timer.Timer] = None
         self._start_waiting_timer()
 
@@ -144,14 +150,16 @@ class RealtimeGPTChat(Node):
 
         if self.use_speech_action:
             self.get_logger().info('Use internal speech server for responding')
-            self.__action_client = ActionClient(self, Speech, ACTION_SERVER_SPEECH)
+            self.__action_client = ActionClient(self, Speech, 'speech_action_server')
             self.__goal_template = Speech.Goal()
-            self.__goal_template.method = Speech.Goal.METHOD_JTALK
-            self.__goal_template.emotion = Speech.Goal.EMOTION_HAPPINESS
+            self.__goal_template.emotion = 'happy'
+            self.__goal_template.emotion_level = 2
             self.__goal_template.pitch = 100
             self.__goal_template.speed = 100
             self.__goal_template.volume = 100
             self._speech_goal_handle = None
+
+            
             self.get_logger().info('Waiting for speech server...')
 
             if not self.__action_client.wait_for_server(timeout_sec=5.0):
@@ -288,7 +296,15 @@ class RealtimeGPTChat(Node):
             return
         try:
             with open(self.history_file, 'a', encoding='utf-8') as f:
-                json.dump({'role': role, 'content': content}, f, ensure_ascii=False)
+                json.dump(
+                    {
+                        'timestamp': datetime.now().isoformat(timespec='seconds'),
+                        'role': role,
+                        'content': content
+                    },
+                    f,
+                    ensure_ascii=False
+                )
                 f.write('\n')
         except Exception as e:
             self.get_logger().warn(f'Failed to save history: {e}')
@@ -368,7 +384,15 @@ class RealtimeGPTChat(Node):
         while self.status_msg.is_active:
             try:
                 audio_data, _ = input_stream.read(self.chunk)
-                self.audio_send_queue.put(audio_data.tobytes())
+                pcm_bytes = audio_data.tobytes()
+                self.audio_send_queue.put(pcm_bytes)
+
+                if self.input_mic_publisher is not None:
+                    msg = AudioDataStamped()
+                    msg.header.stamp = self.get_clock().now().to_msg()
+                    msg.header.frame_id = "mic"
+                    msg.audio.data = pcm_bytes
+                    self.input_mic_publisher.publish(msg)
             except Exception as e:
                 self.get_logger().info(f'Error read input stream {e}')
                 break
@@ -565,6 +589,7 @@ class RealtimeGPTChat(Node):
                                                 self.get_logger().warn(f'Failed to cancel previous speech goal: {e}')
                                         self.__goal_template.text = message if 'message' in locals(
                                         ) else self.assistant_text
+                                        self.get_logger().info(self.__goal_template.text)
                                         future = self.__action_client.send_goal_async(self.__goal_template)
                                         future.add_done_callback(self._on_goal_response)
                                     else:
@@ -596,6 +621,8 @@ class RealtimeGPTChat(Node):
                                     except Exception as e:
                                         self.get_logger().warn(f'Failed to cancel previous speech goal: {e}')
                                 self.__goal_template.text = message if 'message' in locals() else self.assistant_text
+                                self.get_logger().info(self.__goal_template.text)
+
                                 future = self.__action_client.send_goal_async(self.__goal_template)
                                 future.add_done_callback(self._on_goal_response)
                             else:
@@ -645,6 +672,15 @@ class RealtimeGPTChat(Node):
                         if len(self._speech_pcm_buffer) == 0:
                             self.get_logger().warn('No audio captured for this utterance')
                             return
+                        human_msg = AudioDataStamped()
+                        human_msg.header.stamp = self.get_clock().now().to_msg()
+                        human_msg.header.frame_id = 'mic'
+                        human_msg.audio.data = bytes(self._speech_pcm_buffer)
+                        self.human_voice_publisher.publish(human_msg)
+                        self.get_logger().info(
+                            f'Published human_voice_stamped (bytes={len(self._speech_pcm_buffer)})'
+                        )
+
                         self.audio_data_msg.header.stamp = self.get_clock().now().to_msg()
                         self.audio_data_msg.header.frame_id = 'mic'
                         self.audio_data_msg.audio.data = bytes(self._speech_pcm_buffer)

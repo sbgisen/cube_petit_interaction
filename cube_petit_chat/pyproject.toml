@@ -26,6 +26,7 @@ dependencies = [
 
 [project.scripts]
 realtime_gpt_chat = "cube_petit_chat.nodes.realtime_gpt_chat:main"
+gpt_api_chat = "cube_petit_chat.nodes.gpt_api_chat:main"
 
 [build-system]
 requires = ["hatchling"]
