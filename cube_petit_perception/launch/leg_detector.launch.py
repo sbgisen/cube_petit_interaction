@@ -55,7 +55,7 @@ def generate_launch_description() -> LaunchDescription:
                 #      'use_sim_time': False,
                 #  }]),
                 parameters=[{
-                     'fixed_frame': 'base_laser',
+                     'fixed_frame': 'pacecat_link',
                      'connected_thresh': 0.15,
                      'min_points_per_group': 2,
                      'leg_reliability_limit': -1.0,

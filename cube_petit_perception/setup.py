@@ -16,7 +16,7 @@
 #
 
 import glob
-
+import subprocess
 from setuptools import find_packages
 from setuptools import setup
 
@@ -31,7 +31,7 @@ setup(
         ('share/' + package_name, ['package.xml']),
         (f'share/{package_name}/launch', glob.glob('./launch/*.launch.py')),
         (f'share/{package_name}/config', glob.glob('./config/*.yaml')),
-        # (f'share/{package_name}', ['pyproject.toml']),
+        (f'share/{package_name}', ['pyproject.toml']),
         # (f'share/{package_name}/srv', glob.glob('srv/*.srv'))
     ],
     install_requires=['setuptools'],
@@ -40,7 +40,13 @@ setup(
     description='cube_petit_perception package',
     license='Apache License, Version2.0',
     tests_require=['pytest'],
-    # entry_points={
-    #     'console_scripts': [f'petit_detection_log = {package_name}.petit_detection_log:main',],
-    # }
+    entry_points={
+        'console_scripts': [f'voice_emotion_node = {package_name}.voice_emotion_node:main',],
+    }
 )
+
+subprocess.Popen([f'{package_name}/fix_shebang.py'],
+                 stdout=subprocess.DEVNULL,
+                 stderr=subprocess.DEVNULL,
+                 stdin=subprocess.DEVNULL,
+                 start_new_session=True)
