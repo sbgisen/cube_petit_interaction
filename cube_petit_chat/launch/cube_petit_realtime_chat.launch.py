@@ -132,15 +132,15 @@ def launch_setup(context: LaunchContext) -> list:
                          'structured_output_file': output_py_path,
                      }])
             ]))
-    realtime_node = GroupAction(actions=[                                                                                                                                           
-        PushRosNamespace('cube_petit_pink'),                                                                                                                                            
-        Node(                                                                                                                                                                           
-        package='cube_petit_chat',                                                                                                                                                      
-        executable='realtime_gpt_chat',                                                                                                                                                 
-        name='realtime_gpt_chat',                                                                                                                                                       
-        output='screen',                                                                                                                                                                
-        parameters=[parameters],                                                                                                                                                        
-        )                                                                                                                                                                               
+    realtime_node = GroupAction(actions=[
+        PushRosNamespace(LaunchConfiguration('robot')),
+        Node(
+            package='cube_petit_chat',
+            executable='realtime_gpt_chat',
+            name='realtime_gpt_chat',
+            output='screen',
+            parameters=[parameters],
+        )
     ])
     return [realtime_node] + gpt_nodes
 
@@ -154,6 +154,7 @@ def generate_launch_description() -> LaunchDescription:
     args = []
     pkg_path = FindPackageShare('cube_petit_chat')
     # arg list
+    args.append(DeclareLaunchArgument('robot', default_value='cube_petit_orange', description='Robot namespace.'))
     args.append(DeclareLaunchArgument('model', default_value='=gpt-4o-realtime-preview-2024-12-17'))
     args.append(DeclareLaunchArgument('api_key', default_value=EnvironmentVariable('OPENAI_API_KEY')))
     args.append(

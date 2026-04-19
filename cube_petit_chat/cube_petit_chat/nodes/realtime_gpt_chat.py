@@ -38,7 +38,7 @@ from rclpy.task import Future
 # from sbgisen_speech_msgs.action import Speech
 import sounddevice
 from std_msgs.msg import String
-from std_srvs.srv import SetBool
+from std_srvs.srv import SetBool, Trigger
 import websockets
 from websockets.protocol import State
 import yaml
@@ -56,6 +56,7 @@ class RealtimeGPTChat(Node):
         super().__init__('realtime_gpt_chat')
 
         self.srv = self.create_service(SetBool, 'enable_realtime_conversation', self.enable_service_callback)
+        self.get_status_srv = self.create_service(Trigger, 'get_realtime_conversation_status', self.get_status_callback)
         self.text_publisher: Publisher = self.create_publisher(String, 'realtime_conversation_content', 10)
         self.status_publisher: Publisher = self.create_publisher(RealtimeState, 'realtime_conversation_status', 10)
         self.add_context_srv = self.create_service(AddContext, 'add_realtime_context', self.add_context_callback)
@@ -89,6 +90,7 @@ class RealtimeGPTChat(Node):
                                     ('gpt_tool_names', ['']),
                                     ('waiting_time', 10),
                                     ('start_enable', False),
+                                    ('instructions', ''),
                                 ])
 
         api_key = self.get_parameter('api_key').get_parameter_value().string_value
@@ -96,6 +98,12 @@ class RealtimeGPTChat(Node):
         self.realtime_chat_setting_file = self.get_parameter('setting_file').get_parameter_value().string_value
         with open(self.realtime_chat_setting_file, 'r', encoding='utf-8') as f:
             self.instructions = f.read()
+
+        instructions_param = self.get_parameter('instructions').get_parameter_value().string_value
+        if instructions_param:
+            self.instructions = instructions_param
+
+        self.add_on_set_parameters_callback(self._on_parameter_change)
         self.use_input_topic = self.get_parameter('use_input_topic').get_parameter_value().bool_value
         self.use_history = self.get_parameter('use_history').get_parameter_value().bool_value
         self.history_file = self.get_parameter('history_file').get_parameter_value().string_value
@@ -150,7 +158,7 @@ class RealtimeGPTChat(Node):
 
         if self.use_speech_action:
             self.get_logger().info('Use internal speech server for responding')
-            self.__action_client = ActionClient(self, Speech, 'speech_action_server')
+            self.__action_client = ActionClient(self, Speech, '/cube_petit_orange/speech_action_server')
             self.__goal_template = Speech.Goal()
             self.__goal_template.emotion = 'happy'
             self.__goal_template.emotion_level = 2
@@ -175,6 +183,38 @@ class RealtimeGPTChat(Node):
             request.data = True
             response = SetBool.Response()
             self.enable_service_callback(request, response)
+
+    def _on_parameter_change(self, params):
+        from rcl_interfaces.msg import SetParametersResult
+        import os
+        for param in params:
+            if param.name == 'instructions':
+                if param.value.string_value:
+                    self.instructions = param.value.string_value
+                    self.get_logger().info('instructions updated via parameter')
+            elif param.name == 'setting_file':
+                if param.value.string_value:
+                    try:
+                        with open(param.value.string_value, 'r', encoding='utf-8') as f:
+                            self.instructions = f.read()
+                        self.get_logger().info(f'instructions reloaded from {param.value.string_value}')
+                    except Exception as e:
+                        self.get_logger().error(f'Failed to reload instructions: {e}')
+            elif param.name == 'history_file':
+                if param.value.string_value:
+                    path = param.value.string_value
+                    if not os.path.exists(path):
+                        try:
+                            parent = os.path.dirname(path)
+                            if parent:
+                                os.makedirs(parent, exist_ok=True)
+                            open(path, 'w', encoding='utf-8').close()
+                            self.get_logger().info(f'Created new history file: {path}')
+                        except Exception as e:
+                            self.get_logger().error(f'Failed to create history file: {e}')
+                    self.history_file = path
+                    self.get_logger().info(f'history_file switched to {path}')
+        return SetParametersResult(successful=True)
 
     # ----------------------------------------------------------------------------------##
     # Util functions : Waiting Timer
@@ -256,6 +296,15 @@ class RealtimeGPTChat(Node):
         else:
             content_type = 'input_text'
 
+        content = [{'type': content_type, 'text': request.context}]
+        for img in request.images:
+            img_bytes = bytes(img.data)
+            b64 = base64.b64encode(img_bytes).decode()
+            content.append({
+                'type': 'input_image',
+                'image_url': f'data:image/jpeg;base64,{b64}',
+            })
+
         if role == 'user':
             message = {
                 'type': 'response.create',
@@ -264,10 +313,7 @@ class RealtimeGPTChat(Node):
                     'input': [{
                         'type': 'message',
                         'role': 'user',
-                        'content': [{
-                            'type': content_type,
-                            'text': request.context
-                        }]
+                        'content': content,
                     }]
                 }
             }
@@ -277,10 +323,7 @@ class RealtimeGPTChat(Node):
                 'item': {
                     'type': 'message',
                     'role': role,
-                    'content': [{
-                        'type': content_type,
-                        'text': request.context
-                    }]
+                    'content': content,
                 }
             }
 
@@ -840,6 +883,13 @@ class RealtimeGPTChat(Node):
             else:
                 self.get_logger().warning('Audio streaming is already stopped, ignoring request.')
                 response.success = True
+        return response
+
+    def get_status_callback(self, request: Trigger.Request, response: Trigger.Response) -> Trigger.Response:
+        """Republish current status so subscribers can receive the latest state."""
+        self.status_publisher.publish(self.status_msg)
+        response.success = True
+        response.message = ''
         return response
 
     def start_audio_streaming(self) -> None:
