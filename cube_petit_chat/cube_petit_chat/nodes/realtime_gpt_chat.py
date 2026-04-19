@@ -125,6 +125,7 @@ class RealtimeGPTChat(Node):
         self.websocket_url = 'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17'
         self.headers = {'Authorization': 'Bearer ' + api_key, 'OpenAI-Beta': 'realtime=v1'}
         self._websocket_ref = None
+        self._websocket_loop = None
 
         self.audio_send_queue = queue.Queue()
         self.audio_receive_queue = queue.Queue()
@@ -184,25 +185,36 @@ class RealtimeGPTChat(Node):
             response = SetBool.Response()
             self.enable_service_callback(request, response)
 
+    def _push_instructions_to_session(self) -> None:
+        ws = self._websocket_ref
+        loop = getattr(self, '_websocket_loop', None)
+        if ws is None or loop is None:
+            return
+        # 再接続することで新しいセッションに新しいinstructionsを適用する
+        asyncio.run_coroutine_threadsafe(ws.close(), loop)
+        self.get_logger().info('reconnecting websocket to apply new instructions')
+
     def _on_parameter_change(self, params):
         from rcl_interfaces.msg import SetParametersResult
         import os
         for param in params:
             if param.name == 'instructions':
-                if param.value.string_value:
-                    self.instructions = param.value.string_value
+                if param.value:
+                    self.instructions = param.value
                     self.get_logger().info('instructions updated via parameter')
+                    self._push_instructions_to_session()
             elif param.name == 'setting_file':
-                if param.value.string_value:
+                if param.value:
                     try:
-                        with open(param.value.string_value, 'r', encoding='utf-8') as f:
+                        with open(param.value, 'r', encoding='utf-8') as f:
                             self.instructions = f.read()
-                        self.get_logger().info(f'instructions reloaded from {param.value.string_value}')
+                        self.get_logger().info(f'instructions reloaded from {param.value}')
+                        self._push_instructions_to_session()
                     except Exception as e:
                         self.get_logger().error(f'Failed to reload instructions: {e}')
             elif param.name == 'history_file':
-                if param.value.string_value:
-                    path = param.value.string_value
+                if param.value:
+                    path = param.value
                     if not os.path.exists(path):
                         try:
                             parent = os.path.dirname(path)
@@ -932,12 +944,14 @@ class RealtimeGPTChat(Node):
         def run_asyncio_loop() -> None:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
+            self._websocket_loop = loop
             task = loop.create_task(self.stream_audio_and_receive_response())
             try:
                 loop.run_until_complete(task)
             except asyncio.CancelledError:
                 self.get_logger().info('Asyncio loop canceled')
             finally:
+                self._websocket_loop = None
                 loop.stop()
 
         self.websocket_thread = threading.Thread(target=run_asyncio_loop, daemon=True)
