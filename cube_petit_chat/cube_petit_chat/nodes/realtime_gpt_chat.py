@@ -27,10 +27,7 @@ from typing import Optional
 
 from audio_common_msgs.msg import AudioDataStamped
 from audio_common_msgs.msg import AudioInfo
-from cube_petit_chat.nodes.util.name_logic import DEFAULT_ROBOT
-from cube_petit_chat.nodes.util.name_logic import speech_action_server_name
 from cube_petit_chat_msgs.msg import RealtimeState
-from cube_petit_chat_msgs.srv import AddContext
 from cube_petit_speech_msgs.action import Speech
 import numpy
 from rcl_interfaces.msg import SetParametersResult
@@ -49,6 +46,10 @@ from std_srvs.srv import Trigger
 import websockets
 from websockets.protocol import State
 import yaml
+
+from cube_petit_chat.nodes.util.name_logic import DEFAULT_ROBOT
+from cube_petit_chat.nodes.util.name_logic import speech_action_server_name
+from cube_petit_chat_msgs.srv import AddContext
 
 
 class RealtimeGPTChat(Node):
