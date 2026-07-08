@@ -1,7 +1,0 @@
-/**:
-  ros__parameters:
-    sample_rate: 24000
-    channels: 1
-    chunk: 2400
-    max_context_limit: 100
-    max_tokens: 1000

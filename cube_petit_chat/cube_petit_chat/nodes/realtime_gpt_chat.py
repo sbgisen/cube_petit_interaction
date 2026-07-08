@@ -17,6 +17,7 @@
 
 import asyncio
 import base64
+from datetime import datetime
 import importlib
 import json
 import queue
@@ -26,8 +27,13 @@ from typing import Optional
 
 from audio_common_msgs.msg import AudioDataStamped
 from audio_common_msgs.msg import AudioInfo
+from cube_petit_chat.nodes.util.name_logic import DEFAULT_ROBOT
+from cube_petit_chat.nodes.util.name_logic import speech_action_server_name
 from cube_petit_chat_msgs.msg import RealtimeState
+from cube_petit_chat_msgs.srv import AddContext
+from cube_petit_speech_msgs.action import Speech
 import numpy
+from rcl_interfaces.msg import SetParametersResult
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.executors import ExternalShutdownException
@@ -38,14 +44,11 @@ from rclpy.task import Future
 # from sbgisen_speech_msgs.action import Speech
 import sounddevice
 from std_msgs.msg import String
-from std_srvs.srv import SetBool, Trigger
+from std_srvs.srv import SetBool
+from std_srvs.srv import Trigger
 import websockets
 from websockets.protocol import State
 import yaml
-from datetime import datetime
-from cube_petit_speech_msgs.action import Speech
-
-from cube_petit_chat_msgs.srv import AddContext
 
 
 class RealtimeGPTChat(Node):
@@ -56,7 +59,8 @@ class RealtimeGPTChat(Node):
         super().__init__('realtime_gpt_chat')
 
         self.srv = self.create_service(SetBool, 'enable_realtime_conversation', self.enable_service_callback)
-        self.get_status_srv = self.create_service(Trigger, 'get_realtime_conversation_status', self.get_status_callback)
+        self.get_status_srv = self.create_service(Trigger, 'get_realtime_conversation_status',
+                                                  self.get_status_callback)
         self.text_publisher: Publisher = self.create_publisher(String, 'realtime_conversation_content', 10)
         self.status_publisher: Publisher = self.create_publisher(RealtimeState, 'realtime_conversation_status', 10)
         self.add_context_srv = self.create_service(AddContext, 'add_realtime_context', self.add_context_callback)
@@ -91,6 +95,7 @@ class RealtimeGPTChat(Node):
                                     ('waiting_time', 10),
                                     ('start_enable', False),
                                     ('instructions', ''),
+                                    ('robot', DEFAULT_ROBOT),
                                 ])
 
         api_key = self.get_parameter('api_key').get_parameter_value().string_value
@@ -159,7 +164,8 @@ class RealtimeGPTChat(Node):
 
         if self.use_speech_action:
             self.get_logger().info('Use internal speech server for responding')
-            self.__action_client = ActionClient(self, Speech, '/cube_petit_orange/speech_action_server')
+            robot = self.get_parameter('robot').get_parameter_value().string_value
+            self.__action_client = ActionClient(self, Speech, speech_action_server_name(robot))
             self.__goal_template = Speech.Goal()
             self.__goal_template.emotion = 'happy'
             self.__goal_template.emotion_level = 2
@@ -168,7 +174,6 @@ class RealtimeGPTChat(Node):
             self.__goal_template.volume = 100
             self._speech_goal_handle = None
 
-            
             self.get_logger().info('Waiting for speech server...')
 
             if not self.__action_client.wait_for_server(timeout_sec=5.0):
@@ -194,8 +199,7 @@ class RealtimeGPTChat(Node):
         asyncio.run_coroutine_threadsafe(ws.close(), loop)
         self.get_logger().info('reconnecting websocket to apply new instructions')
 
-    def _on_parameter_change(self, params):
-        from rcl_interfaces.msg import SetParametersResult
+    def _on_parameter_change(self, params: list) -> SetParametersResult:
         import os
         for param in params:
             if param.name == 'instructions':
@@ -351,15 +355,13 @@ class RealtimeGPTChat(Node):
             return
         try:
             with open(self.history_file, 'a', encoding='utf-8') as f:
-                json.dump(
-                    {
-                        'timestamp': datetime.now().isoformat(timespec='seconds'),
-                        'role': role,
-                        'content': content
-                    },
-                    f,
-                    ensure_ascii=False
-                )
+                json.dump({
+                    'timestamp': datetime.now().isoformat(timespec='seconds'),
+                    'role': role,
+                    'content': content
+                },
+                          f,
+                          ensure_ascii=False)
                 f.write('\n')
         except Exception as e:
             self.get_logger().warn(f'Failed to save history: {e}')
@@ -445,7 +447,7 @@ class RealtimeGPTChat(Node):
                 if self.input_mic_publisher is not None:
                     msg = AudioDataStamped()
                     msg.header.stamp = self.get_clock().now().to_msg()
-                    msg.header.frame_id = "mic"
+                    msg.header.frame_id = 'mic'
                     msg.audio.data = pcm_bytes
                     self.input_mic_publisher.publish(msg)
             except Exception as e:
@@ -732,9 +734,7 @@ class RealtimeGPTChat(Node):
                         human_msg.header.frame_id = 'mic'
                         human_msg.audio.data = bytes(self._speech_pcm_buffer)
                         self.human_voice_publisher.publish(human_msg)
-                        self.get_logger().info(
-                            f'Published human_voice_stamped (bytes={len(self._speech_pcm_buffer)})'
-                        )
+                        self.get_logger().info(f'Published human_voice_stamped (bytes={len(self._speech_pcm_buffer)})')
 
                         self.audio_data_msg.header.stamp = self.get_clock().now().to_msg()
                         self.audio_data_msg.header.frame_id = 'mic'
