@@ -15,9 +15,10 @@
 # limitations under the License.
 """life_state_logic の単体テスト (ROS非依存)."""
 
+import pytest
+
 from cube_petit_lifestate.life_state_logic import clamp
 from cube_petit_lifestate.life_state_logic import natural_step
-import pytest
 
 DT = 0.1  # LifeStateNode のタイマー周期
 

@@ -18,11 +18,12 @@
 import time
 from typing import Dict, Optional
 
-from cube_petit_behavior import behavior_logic
-from cube_petit_interaction_msgs.msg import LifeState
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
+
+from cube_petit_behavior import behavior_logic
+from cube_petit_interaction_msgs.msg import LifeState
 
 
 class BehaviorNode(Node):

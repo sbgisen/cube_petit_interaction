@@ -15,10 +15,11 @@
 # limitations under the License.
 #
 
-from cube_petit_interaction_msgs.msg import LifeState
-from cube_petit_lifestate import life_state_logic
 import rclpy
 from rclpy.node import Node
+
+from cube_petit_interaction_msgs.msg import LifeState
+from cube_petit_lifestate import life_state_logic
 
 
 class LifeStateNode(Node):

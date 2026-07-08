@@ -19,8 +19,9 @@ import pathlib
 import time
 import typing
 
-from memory_person.src.user_store import UserStore
 import pytest
+
+from memory_person.src.user_store import UserStore
 
 
 @pytest.fixture

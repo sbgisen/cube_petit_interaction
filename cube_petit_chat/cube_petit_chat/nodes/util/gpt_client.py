@@ -18,11 +18,12 @@ import base64
 import pathlib
 from typing import Callable, Dict, List, Optional
 
-from cube_petit_chat.nodes.util import history_logic
 import cv2
 import numpy as np
 from openai import OpenAI
 from vision_msgs.msg import BoundingBox2D
+
+from cube_petit_chat.nodes.util import history_logic
 
 
 class GPTClient:
