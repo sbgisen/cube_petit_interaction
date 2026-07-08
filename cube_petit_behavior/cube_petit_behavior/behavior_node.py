@@ -15,7 +15,6 @@
 # limitations under the License.
 #
 
-import random
 import time
 from typing import Dict, Optional
 
@@ -23,6 +22,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 
+from cube_petit_behavior import behavior_logic
 from cube_petit_interaction_msgs.msg import LifeState
 
 
@@ -124,8 +124,7 @@ class BehaviorNode(Node):
 
     def add_random_noise(self, scores: Dict[str, float]) -> None:
         """Add small random noise to each score."""
-        for key in scores:
-            scores[key] += random.uniform(-0.05, 0.05)
+        behavior_logic.add_random_noise(scores)
 
     def select_with_hysteresis(
         self,
@@ -134,21 +133,14 @@ class BehaviorNode(Node):
         now: float,
     ) -> str:
         """Select the best intent with hysteresis and hold-time constraints."""
-        best = max(scores, key=scores.get)
-
-        if last is None:
-            return best
-
-        if best != last:
-            diff = scores[best] - scores[last]
-
-            if diff < self.hysteresis:
-                return last
-
-            if now - self.last_change_time < self.hold_time:
-                return last
-
-        return best
+        return behavior_logic.select_with_hysteresis(
+            scores,
+            last,
+            now,
+            self.last_change_time,
+            self.hysteresis,
+            self.hold_time,
+        )
 
     def publish_if_changed(
         self,
