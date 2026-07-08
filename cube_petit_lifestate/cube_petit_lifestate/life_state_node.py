@@ -19,6 +19,7 @@ import rclpy
 from rclpy.node import Node
 
 from cube_petit_interaction_msgs.msg import LifeState
+from cube_petit_lifestate import life_state_logic
 
 
 class LifeStateNode(Node):
@@ -69,13 +70,18 @@ class LifeStateNode(Node):
         self.get_logger().info('LifeState node started')
 
     def on_timer(self) -> None:
-        # ---- natural change ----
-        self.attention -= 0.01 * self.att_down * self.dt
-        self.arousal -= 0.005 * self.aro_down * self.dt
-        self.loneliness += 0.02 * self.lon_up * self.dt
-        self.stress -= 0.01 * self.str_down * self.dt
-
-        self.clamp()
+        # ---- natural change (積分とクランプは life_state_logic に切り出し) ----
+        (self.attention, self.arousal, self.stress, self.loneliness) = life_state_logic.natural_step(
+            self.attention,
+            self.arousal,
+            self.stress,
+            self.loneliness,
+            self.att_down,
+            self.aro_down,
+            self.str_down,
+            self.lon_up,
+            self.dt,
+        )
 
         msg = LifeState()
         msg.attention = float(self.attention)
@@ -84,12 +90,6 @@ class LifeStateNode(Node):
         msg.loneliness = float(self.loneliness)
 
         self.publisher_.publish(msg)
-
-    def clamp(self) -> None:
-        self.attention = min(max(self.attention, 0.0), 1.0)
-        self.arousal = min(max(self.arousal, 0.0), 1.0)
-        self.stress = min(max(self.stress, 0.0), 1.0)
-        self.loneliness = min(max(self.loneliness, 0.0), 1.0)
 
 
 def main() -> None:

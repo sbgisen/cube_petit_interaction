@@ -10,6 +10,7 @@ from typing import List
 from vision_msgs.msg import BoundingBox2D
 from typing import Dict, Callable
 
+from cube_petit_chat.nodes.util import history_logic
 
 
 class GPTClient:
@@ -53,32 +54,13 @@ class GPTClient:
         return base64.b64encode(buffer).decode("utf-8")
 
     def _approx_token_count(self, messages: List[Dict]) -> int:
-        total = 0
-        for msg in messages:
-            content = msg["content"]
-            if isinstance(content, list):
-                for block in content:
-                    if block["type"] == "input_text":
-                        total += len(block["text"]) // 4
-            else:
-                total += len(str(content)) // 4
-        return total
+        return history_logic.approx_token_count(messages)
 
     def _trim_history(self):
-        messages = self._build_input()
-        while self._approx_token_count(messages) > self.max_tokens and len(self._history) > 1:
-            self._history.pop(0)
-            messages = self._build_input()
+        history_logic.trim_history(self._history, self.system_prompt, self.max_tokens)
 
     def _build_input(self) -> List[Dict]:
-        messages = []
-        if self.system_prompt:
-            messages.append({
-                "role": "system",
-                "content": self.system_prompt
-            })
-        messages.extend(self._history)
-        return messages
+        return history_logic.build_input(self.system_prompt, self._history)
 
     # ==========================================================
     # Public API
@@ -91,29 +73,19 @@ class GPTClient:
         images: Optional[List[np.ndarray]] = None,
     ) -> None:
 
-        content_blocks = []
-
-        if text:
-            if pathlib.Path(text).is_file():
-                text = pathlib.Path(text).read_text(encoding="utf-8")
-
-            content_blocks.append({
-                "type": "input_text",
-                "text": text
-            })
-
+        image_data_urls = None
         if images:
-            for img in images:
-                content_blocks.append({
-                    "type": "input_image",
-                    "image_url": f"data:image/jpeg;base64,{self._encode_image(img)}",
-                    "detail": self.detail,
-                })
+            image_data_urls = [
+                f"data:image/jpeg;base64,{self._encode_image(img)}" for img in images
+            ]
 
-        self._history.append({
-            "role": role,
-            "content": content_blocks if content_blocks else text
-        })
+        self._history.append(
+            history_logic.make_context_entry(
+                role,
+                text=text,
+                image_data_urls=image_data_urls,
+                detail=self.detail,
+            ))
 
     def clear_context(self) -> None:
         self._history = []
