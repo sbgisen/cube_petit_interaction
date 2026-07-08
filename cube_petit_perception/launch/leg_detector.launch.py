@@ -31,7 +31,7 @@ def generate_launch_description() -> LaunchDescription:
         Launch descriptions
     """
     args = []
-    args.append(DeclareLaunchArgument('robot', default_value='cube_petit_pink'))
+    args.append(DeclareLaunchArgument('robot', default_value='cube_petit_orange', description='Robot namespace.'))
 
     leg_detector = GroupAction(actions=[
         PushROSNamespace('object_detection'),
