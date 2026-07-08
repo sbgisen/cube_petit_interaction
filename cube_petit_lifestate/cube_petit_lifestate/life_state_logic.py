@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """Pure life-state integration logic (ROS非依存).
 
 LifeStateNode から切り出した自然変化の積分とクランプのロジック。
@@ -24,7 +23,7 @@ from typing import Tuple
 
 
 def clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
-    """value を [low, high] に収める."""
+    """Value を [low, high] に収める."""
     return min(max(value, low), high)
 
 

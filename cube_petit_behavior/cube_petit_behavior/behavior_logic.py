@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """Pure behavior-selection logic (ROS非依存).
 
 BehaviorNode から切り出したヒステリシス選択とノイズ付加のロジック。

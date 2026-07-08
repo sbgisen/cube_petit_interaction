@@ -2,8 +2,17 @@
 
 # Copyright (c) 2026 SoftBank Corp.
 #
-# <<licensetext>>
-
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 """GPT会話履歴・トークン概算のロジック (ROS非依存).
 
 GPTClient から切り出した履歴組み立て・トリミング・トークン概算のロジック。
@@ -18,24 +27,21 @@ def approx_token_count(messages: List[Dict]) -> int:
     """メッセージ列のトークン数を概算する (約4文字 = 1トークン)."""
     total = 0
     for msg in messages:
-        content = msg["content"]
+        content = msg['content']
         if isinstance(content, list):
             for block in content:
-                if block["type"] == "input_text":
-                    total += len(block["text"]) // 4
+                if block['type'] == 'input_text':
+                    total += len(block['text']) // 4
         else:
             total += len(str(content)) // 4
     return total
 
 
 def build_input(system_prompt: str, history: List[Dict]) -> List[Dict]:
-    """system プロンプト + 履歴から API 入力メッセージ列を組み立てる."""
+    """System プロンプト + 履歴から API 入力メッセージ列を組み立てる."""
     messages = []
     if system_prompt:
-        messages.append({
-            "role": "system",
-            "content": system_prompt
-        })
+        messages.append({'role': 'system', 'content': system_prompt})
     messages.extend(history)
     return messages
 
@@ -52,29 +58,23 @@ def make_context_entry(
     role: str,
     text: Optional[str] = None,
     image_data_urls: Optional[List[str]] = None,
-    detail: str = "auto",
+    detail: str = 'auto',
 ) -> Dict:
     """履歴に追加するエントリを組み立てる. text がファイルパスなら内容を読み込む."""
     content_blocks = []
 
     if text:
         if pathlib.Path(text).is_file():
-            text = pathlib.Path(text).read_text(encoding="utf-8")
+            text = pathlib.Path(text).read_text(encoding='utf-8')
 
-        content_blocks.append({
-            "type": "input_text",
-            "text": text
-        })
+        content_blocks.append({'type': 'input_text', 'text': text})
 
     if image_data_urls:
         for image_url in image_data_urls:
             content_blocks.append({
-                "type": "input_image",
-                "image_url": image_url,
-                "detail": detail,
+                'type': 'input_image',
+                'image_url': image_url,
+                'detail': detail,
             })
 
-    return {
-        "role": role,
-        "content": content_blocks if content_blocks else text
-    }
+    return {'role': role, 'content': content_blocks if content_blocks else text}
