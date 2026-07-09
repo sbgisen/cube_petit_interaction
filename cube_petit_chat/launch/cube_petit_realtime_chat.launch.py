@@ -33,6 +33,7 @@ from launch_ros.substitutions import FindPackageShare
 def launch_setup(context: LaunchContext) -> list:
     """Configure Azure-related parameters if 'use_azure' is true."""
     parameters = {
+        'robot': LaunchConfiguration('robot'),
         'model': LaunchConfiguration('model'),
         'api_key': LaunchConfiguration('api_key'),
         'setting_file': LaunchConfiguration('setting_file'),
