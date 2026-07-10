@@ -156,7 +156,9 @@ def generate_launch_description() -> LaunchDescription:
     pkg_path = FindPackageShare('cube_petit_chat')
     # arg list
     args.append(DeclareLaunchArgument('robot', default_value='cube_petit_orange', description='Robot namespace.'))
-    args.append(DeclareLaunchArgument('model', default_value='=gpt-4o-realtime-preview-2024-12-17'))
+    # 2026-05-12 の OpenAI Realtime API GA 移行に伴い既定モデルを更新。
+    # 以前は先頭に '=' が誤って付いており、model パラメータとして無効な値が渡っていた (未使用のバグと合わせて修正)。
+    args.append(DeclareLaunchArgument('model', default_value='gpt-realtime-2.1'))
     args.append(DeclareLaunchArgument('api_key', default_value=EnvironmentVariable('OPENAI_API_KEY')))
     args.append(
         DeclareLaunchArgument('use_past_context',

@@ -47,7 +47,10 @@ from cube_petit_chat.nodes.realtime import tools as realtime_tools
 from cube_petit_chat.nodes.realtime.protocol import build_context_message
 from cube_petit_chat.nodes.realtime.protocol import build_session_update
 from cube_petit_chat.nodes.realtime.protocol import build_tool_result_events
+from cube_petit_chat.nodes.realtime.protocol import build_websocket_headers
+from cube_petit_chat.nodes.realtime.protocol import build_websocket_url
 from cube_petit_chat.nodes.realtime.protocol import decode_audio_delta
+from cube_petit_chat.nodes.realtime.protocol import DEFAULT_REALTIME_MODEL
 from cube_petit_chat.nodes.realtime.protocol import extract_assistant_texts
 from cube_petit_chat.nodes.realtime.protocol import merge_history_into_instructions
 from cube_petit_chat.nodes.realtime.protocol import rate_limit_warnings
@@ -85,7 +88,7 @@ class RealtimeGPTChat(Node):
         self.declare_parameters(namespace='',
                                 parameters=[
                                     ('api_key', ''),
-                                    ('model', 'gpt-4o-realtime-preview-2024-12-17'),
+                                    ('model', DEFAULT_REALTIME_MODEL),
                                     ('past_context_file', ''),
                                     ('max_context_limit', 100),
                                     ('max_tokens', 1000),
@@ -107,7 +110,7 @@ class RealtimeGPTChat(Node):
                                 ])
 
         api_key = self.get_parameter('api_key').get_parameter_value().string_value
-        # model = self.get_parameter('model').get_parameter_value().string_value
+        model = self.get_parameter('model').get_parameter_value().string_value
         self.realtime_chat_setting_file = self.get_parameter('setting_file').get_parameter_value().string_value
         with open(self.realtime_chat_setting_file, 'r', encoding='utf-8') as f:
             self.instructions = f.read()
@@ -135,8 +138,10 @@ class RealtimeGPTChat(Node):
 
         self.waiting_time = self.get_parameter('waiting_time').get_parameter_value().integer_value
 
-        self.websocket_url = 'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17'
-        self.headers = {'Authorization': 'Bearer ' + api_key, 'OpenAI-Beta': 'realtime=v1'}
+        # 2026-05-12 に OpenAI が Realtime API の beta shape を廃止したため、
+        # model パラメータを実際に使って接続 URL を組み立て、OpenAI-Beta ヘッダは付けない (GA shape)。
+        self.websocket_url = build_websocket_url(model)
+        self.headers = build_websocket_headers(api_key)
         self._websocket_ref = None
         self._websocket_loop = None
 
@@ -566,16 +571,16 @@ class RealtimeGPTChat(Node):
                 self.text_publisher.publish(text_msg)
                 self.save_to_history('assistant', message)
                 self._send_speech_goal(message)
-        if response_type in ('response.audio_transcript.delta', 'response.text.delta'):
+        if response_type in ('response.output_audio_transcript.delta', 'response.output_text.delta'):
             self.assistant_text += response_data['delta']
         # Retrieve the completion status of the server response
-        elif response_type in ('response.audio_transcript.done', 'response.text.done'):
+        elif response_type in ('response.output_audio_transcript.done', 'response.output_text.done'):
 
             text_msg = String()
             text_msg.data = f'robot: {self.assistant_text}'
             self.text_publisher.publish(text_msg)
             self.save_to_history('assistant', self.assistant_text)
-            if response_type == 'response.text.done':
+            if response_type == 'response.output_text.done':
                 self._send_speech_goal(self.assistant_text)
             self.assistant_text = ''
             self._start_waiting_timer()
@@ -623,7 +628,7 @@ class RealtimeGPTChat(Node):
             self.audio_data_msg.header.stamp = self.get_clock().now().to_msg()
             self.audio_data_msg.header.frame_id = 'mic'
             self.audio_data_msg.audio.data = bytes(self._speech_pcm_buffer)
-        if 'type' in response_data and response_data['type'] == 'response.audio.delta':
+        if 'type' in response_data and response_data['type'] == 'response.output_audio.delta':
             base64_audio_response = response_data['delta']
             if base64_audio_response:
                 self.audio_receive_queue.put(decode_audio_delta(base64_audio_response))
