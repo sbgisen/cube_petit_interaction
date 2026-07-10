@@ -21,12 +21,41 @@ import json
 from cube_petit_chat.nodes.realtime.protocol import build_context_message
 from cube_petit_chat.nodes.realtime.protocol import build_session_update
 from cube_petit_chat.nodes.realtime.protocol import build_tool_result_events
+from cube_petit_chat.nodes.realtime.protocol import build_websocket_headers
+from cube_petit_chat.nodes.realtime.protocol import build_websocket_url
 from cube_petit_chat.nodes.realtime.protocol import decode_audio_delta
+from cube_petit_chat.nodes.realtime.protocol import DEFAULT_REALTIME_MODEL
 from cube_petit_chat.nodes.realtime.protocol import encode_audio_append_event
 from cube_petit_chat.nodes.realtime.protocol import extract_assistant_texts
 from cube_petit_chat.nodes.realtime.protocol import merge_history_into_instructions
 from cube_petit_chat.nodes.realtime.protocol import parse_tool_arguments
 from cube_petit_chat.nodes.realtime.protocol import rate_limit_warnings
+
+
+class TestBuildWebsocketConnection:
+    """GA shape での接続用 URL / ヘッダ組み立て (beta shape 廃止対応)."""
+
+    def test_url_uses_configured_model(self) -> None:
+        url = build_websocket_url('gpt-realtime-2.1')
+        assert url == 'wss://api.openai.com/v1/realtime?model=gpt-realtime-2.1'
+
+    def test_url_reflects_arbitrary_model_param(self) -> None:
+        """Model は呼び出し元 (ROS パラメータ) の値をそのまま使う."""
+        assert build_websocket_url('gpt-realtime-mini') == 'wss://api.openai.com/v1/realtime?model=gpt-realtime-mini'
+
+    def test_default_model_is_ga_recommended(self) -> None:
+        """既定モデルは GA の音声エージェント向け推奨モデル."""
+        assert DEFAULT_REALTIME_MODEL == 'gpt-realtime-2.1'
+
+    def test_headers_contain_only_authorization(self) -> None:
+        """GA では OpenAI-Beta: realtime=v1 ヘッダを送ってはいけない (beta_api_shape_disabled で拒否される)."""
+        headers = build_websocket_headers('sk-test-key')
+        assert headers == {'Authorization': 'Bearer sk-test-key'}
+        assert 'OpenAI-Beta' not in headers
+
+    def test_headers_do_not_leak_beta_marker(self) -> None:
+        headers = build_websocket_headers('sk-test-key')
+        assert 'realtime=v1' not in headers.values()
 
 
 class TestBuildContextMessage:
@@ -35,7 +64,8 @@ class TestBuildContextMessage:
         """ロールが user なら response.create イベントになる (従来挙動)."""
         message = build_context_message(2, 'こんにちは')
         assert message['type'] == 'response.create'
-        assert message['response']['modalities'] == ['text']
+        assert message['response']['output_modalities'] == ['text']
+        assert 'modalities' not in message['response']
         item = message['response']['input'][0]
         assert item['role'] == 'user'
         assert item['content'] == [{'type': 'input_text', 'text': 'こんにちは'}]
@@ -46,11 +76,11 @@ class TestBuildContextMessage:
         assert message['item']['role'] == 'system'
         assert message['item']['content'][0]['type'] == 'input_text'
 
-    def test_assistant_role_uses_text_content_type(self) -> None:
-        """ロールが assistant のときだけ content type が 'text' になる (従来挙動)."""
+    def test_assistant_role_uses_output_text_content_type(self) -> None:
+        """GA では assistant の content type は 'output_text' (旧 'text' から改名)."""
         message = build_context_message(1, '応答')
         assert message['item']['role'] == 'assistant'
-        assert message['item']['content'][0]['type'] == 'text'
+        assert message['item']['content'][0]['type'] == 'output_text'
 
     def test_unknown_role_falls_back_to_user(self) -> None:
         message = build_context_message(99, 'テキスト')
@@ -67,23 +97,47 @@ class TestBuildContextMessage:
 
 
 class TestBuildSessionUpdate:
+    """GA shape: session.type 必須、音声設定は session.audio.input/output 配下."""
 
-    def test_speech_action_uses_text_only_modality(self) -> None:
+    def test_session_type_is_realtime(self) -> None:
         event = build_session_update('指示', use_speech_action=True)
         assert event['type'] == 'session.update'
-        assert event['session']['modalities'] == ['text']
+        assert event['session']['type'] == 'realtime'
 
-    def test_without_speech_action_uses_audio_and_text(self) -> None:
+    def test_speech_action_uses_text_only_output_modality(self) -> None:
+        event = build_session_update('指示', use_speech_action=True)
+        assert event['session']['output_modalities'] == ['text']
+
+    def test_without_speech_action_uses_audio_only_output_modality(self) -> None:
+        """GA では text と audio を同時指定できないため audio のみを指定する.
+
+        音声応答の文字起こしは response.output_audio_transcript.* イベント経由で届く。
+        """
         event = build_session_update('指示', use_speech_action=False)
-        assert event['session']['modalities'] == ['audio', 'text']
+        assert event['session']['output_modalities'] == ['audio']
 
-    def test_fixed_fields_are_preserved(self) -> None:
-        """固定フィールド (voice / turn_detection / 文字起こしモデル) は従来の値のまま."""
+    def test_no_top_level_beta_shape_fields(self) -> None:
+        """Beta shape の名残 (turn_detection/voice/modalities 等) がセッション直下に残っていないことを確認する."""
+        session = build_session_update('指示', use_speech_action=True)['session']
+        for beta_field in ('turn_detection', 'voice', 'modalities', 'input_audio_transcription'):
+            assert beta_field not in session
+
+    def test_audio_input_config(self) -> None:
+        session = build_session_update('指示', use_speech_action=True)['session']
+        audio_input = session['audio']['input']
+        assert audio_input['format'] == {'type': 'audio/pcm', 'rate': 24000}
+        assert audio_input['turn_detection'] == {'type': 'server_vad', 'threshold': 0.5}
+        assert audio_input['transcription'] == {'model': 'whisper-1'}
+
+    def test_audio_output_config(self) -> None:
+        session = build_session_update('指示', use_speech_action=False)['session']
+        audio_output = session['audio']['output']
+        assert audio_output['format'] == {'type': 'audio/pcm', 'rate': 24000}
+        assert audio_output['voice'] == 'alloy'
+
+    def test_instructions_preserved(self) -> None:
         session = build_session_update('指示', use_speech_action=True)['session']
         assert session['instructions'] == '指示'
-        assert session['voice'] == 'alloy'
-        assert session['turn_detection'] == {'type': 'server_vad', 'threshold': 0.5}
-        assert session['input_audio_transcription'] == {'model': 'whisper-1'}
 
     def test_tools_included_only_when_non_empty(self) -> None:
         tools = [{'name': 'weather'}]
@@ -139,7 +193,7 @@ class TestBuildToolResultEvents:
         assert events[0]['type'] == 'conversation.item.create'
         assert events[0]['item']['type'] == 'function_call_output'
         assert events[0]['item']['call_id'] == 'call_123'
-        assert events[1] == {'type': 'response.create', 'response': {'modalities': ['text']}}
+        assert events[1] == {'type': 'response.create', 'response': {'output_modalities': ['text']}}
 
     def test_output_is_wrapped_result_json_without_ascii_escape(self) -> None:
         events = build_tool_result_events('c', '晴れ')
@@ -173,18 +227,22 @@ class TestRateLimitWarnings:
 
 
 class TestExtractAssistantTexts:
+    """GA では assistant メッセージの content type が output_text / output_audio に改名されている."""
 
     def test_assistant_message_texts(self) -> None:
         item = {
-            'role': 'assistant',
-            'type': 'message',
+            'role':
+                'assistant',
+            'type':
+                'message',
             'content': [{
-                'type': 'text',
+                'type': 'output_text',
                 'text': 'こんにちは'
             }, {
-                'type': 'audio'
+                'type': 'output_audio',
+                'transcript': '(音声のみなので抽出対象外)'
             }, {
-                'type': 'text',
+                'type': 'output_text',
                 'text': '元気?'
             }]
         }
@@ -196,5 +254,10 @@ class TestExtractAssistantTexts:
         assert extract_assistant_texts({}) == []
 
     def test_text_block_without_text_defaults_to_empty_string(self) -> None:
-        item = {'role': 'assistant', 'type': 'message', 'content': [{'type': 'text'}]}
+        item = {'role': 'assistant', 'type': 'message', 'content': [{'type': 'output_text'}]}
         assert extract_assistant_texts(item) == ['']
+
+    def test_old_beta_text_type_is_no_longer_recognized(self) -> None:
+        """Beta shape の 'text' type はもう認識しない (GA の 'output_text' のみ拾う)."""
+        item = {'role': 'assistant', 'type': 'message', 'content': [{'type': 'text', 'text': '旧shape'}]}
+        assert extract_assistant_texts(item) == []

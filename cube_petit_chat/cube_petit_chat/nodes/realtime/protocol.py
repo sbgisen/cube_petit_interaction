@@ -30,6 +30,43 @@ ROLE_MAP = {
     2: 'user',
 }
 
+# OpenAI Realtime API (GA) の推奨モデル。音声エージェント用途の既定値。
+# https://developers.openai.com/api/docs/guides/realtime (Build a low-latency voice agent -> gpt-realtime-2.1)
+DEFAULT_REALTIME_MODEL = 'gpt-realtime-2.1'
+
+# 入出力とも 24kHz PCM16 固定 (audio_io.py 側のサンプルレートと一致させる)
+_PCM_AUDIO_FORMAT = {'type': 'audio/pcm', 'rate': 24000}
+
+
+def build_websocket_url(model: str) -> str:
+    """OpenAI Realtime API (GA) への接続 URL を組み立てる.
+
+    URL の形自体は beta 期から変わらないが、model は呼び出し元 (ROS パラメータ) 由来にする。
+
+    Args:
+        model: 接続する Realtime モデル名 (例: gpt-realtime-2.1)。
+
+    Returns:
+        wss://api.openai.com/v1/realtime?model=... の URL 文字列。
+    """
+    return f'wss://api.openai.com/v1/realtime?model={model}'
+
+
+def build_websocket_headers(api_key: str) -> Dict[str, str]:
+    """接続用 HTTP ヘッダを組み立てる.
+
+    2026-05-12 に OpenAI が beta shape を廃止したため、`OpenAI-Beta: realtime=v1`
+    ヘッダは付けない (付けると invalid_request_error.beta_api_shape_disabled で
+    close code 4000 になる)。GA でも Authorization ヘッダのみで認証する。
+
+    Args:
+        api_key: OpenAI API キー。
+
+    Returns:
+        Authorization ヘッダのみを含む dict。
+    """
+    return {'Authorization': f'Bearer {api_key}'}
+
 
 def build_context_message(role_id: int, context: str, images: Optional[List[bytes]] = None) -> Dict:
     """AddContext リクエストの内容から Realtime API へ送るイベントを組み立てる.
@@ -44,7 +81,8 @@ def build_context_message(role_id: int, context: str, images: Optional[List[byte
     """
     role = ROLE_MAP.get(role_id, 'user')
     if role == 'assistant':
-        content_type = 'text'
+        # GA では assistant メッセージの content type は 'text' ではなく 'output_text'。
+        content_type = 'output_text'
     else:
         content_type = 'input_text'
 
@@ -60,7 +98,8 @@ def build_context_message(role_id: int, context: str, images: Optional[List[byte
         return {
             'type': 'response.create',
             'response': {
-                'modalities': ['text'],
+                # GA では response.create の modalities は output_modalities に改名された。
+                'output_modalities': ['text'],
                 'input': [{
                     'type': 'message',
                     'role': 'user',
@@ -79,27 +118,43 @@ def build_context_message(role_id: int, context: str, images: Optional[List[byte
 
 
 def build_session_update(instructions: str, use_speech_action: bool, tools: Optional[List[Dict]] = None) -> Dict:
-    """session.update イベントを組み立てる.
+    """session.update イベントを組み立てる (GA shape).
+
+    GA では session.type が必須になり、音声関連の設定はすべて session.audio.input /
+    session.audio.output 配下に移動した (以前は turn_detection / voice / modalities /
+    input_audio_transcription がすべてセッション直下だった)。
+    また modalities は output_modalities に改名され、text と audio を同時に指定できなく
+    なった (音声応答時は response.output_audio_transcript.* イベントで文字起こしが届く
+    ので、テキストと音声を両方要求していた従来の実質的な効果は保たれる)。
 
     Args:
         instructions: セッションに適用する指示文。
-        use_speech_action: True ならテキストのみ、False なら音声+テキストのモダリティ。
+        use_speech_action: True ならテキストのみ、False なら音声のモダリティ。
         tools: ツール定義のリスト (空/None なら tools キーを付けない)。
 
     Returns:
         session.update のイベント dict。
     """
     session: Dict = {
-        'modalities': ['text'] if use_speech_action else ['audio', 'text'],
+        'type': 'realtime',
+        'output_modalities': ['text'] if use_speech_action else ['audio'],
         'instructions': instructions,
-        'voice': 'alloy',
-        'turn_detection': {
-            'type': 'server_vad',
-            'threshold': 0.5,
+        'audio': {
+            'input': {
+                'format': _PCM_AUDIO_FORMAT,
+                'turn_detection': {
+                    'type': 'server_vad',
+                    'threshold': 0.5,
+                },
+                'transcription': {
+                    'model': 'whisper-1'
+                },
+            },
+            'output': {
+                'format': _PCM_AUDIO_FORMAT,
+                'voice': 'alloy',
+            },
         },
-        'input_audio_transcription': {
-            'model': 'whisper-1'
-        }
     }
     if tools:
         session['tools'] = tools
@@ -127,7 +182,7 @@ def encode_audio_append_event(audio_data: bytes) -> Dict:
 
 
 def decode_audio_delta(delta: str) -> bytes:
-    """response.audio.delta の base64 文字列を PCM バイト列に復号する."""
+    """response.output_audio.delta の base64 文字列を PCM バイト列に復号する (GA でイベント名が改名)."""
     return base64.b64decode(delta)
 
 
@@ -170,7 +225,7 @@ def build_tool_result_events(call_id: str, result: object) -> List[Dict]:
         {
             'type': 'response.create',
             'response': {
-                'modalities': ['text']
+                'output_modalities': ['text']
             }
         },
     ]
@@ -205,8 +260,8 @@ def extract_assistant_texts(item: Dict) -> List[str]:
         item: conversation.item.created イベントの item dict。
 
     Returns:
-        アシスタントのメッセージ (type: text) のテキストのリスト。
+        アシスタントのメッセージ (type: output_text) のテキストのリスト。
     """
     if item.get('role') != 'assistant' or item.get('type') != 'message':
         return []
-    return [block.get('text', '') for block in item.get('content', []) if block.get('type') == 'text']
+    return [block.get('text', '') for block in item.get('content', []) if block.get('type') == 'output_text']
