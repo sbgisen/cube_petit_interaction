@@ -15,10 +15,12 @@
 # limitations under the License.
 """GPT会話履歴・トークン概算のロジック (ROS非依存).
 
-GPTClient から切り出した履歴組み立て・トリミング・トークン概算のロジック。
+GPTClient から切り出した履歴組み立て・トリミング・トークン概算のロジックと、
+realtime_gpt_chat が使う jsonl 履歴の整形・パース。
 画像はエンコード済みの data URL 文字列として受け取る。
 """
 
+import json
 import pathlib
 from typing import Dict, List, Optional
 
@@ -78,3 +80,19 @@ def make_context_entry(
             })
 
     return {'role': role, 'content': content_blocks if content_blocks else text}
+
+
+def format_history_entry(role: str, content: str, timestamp: str) -> str:
+    """JSONL 履歴ファイルに追記する 1 行を組み立てる (改行付き)."""
+    return json.dumps({'timestamp': timestamp, 'role': role, 'content': content}, ensure_ascii=False) + '\n'
+
+
+def parse_history_lines(lines: List[str]) -> List[Dict]:
+    """JSONL 履歴の行リストをパースする (壊れた行はスキップ)."""
+    history: List[Dict] = []
+    for line in lines:
+        try:
+            history.append(json.loads(line.strip()))
+        except json.JSONDecodeError:
+            continue
+    return history

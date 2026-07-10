@@ -16,9 +16,7 @@
 #
 
 import asyncio
-import base64
 from datetime import datetime
-import importlib
 import json
 import queue
 import sys
@@ -29,7 +27,6 @@ from audio_common_msgs.msg import AudioDataStamped
 from audio_common_msgs.msg import AudioInfo
 from cube_petit_chat_msgs.msg import RealtimeState
 from cube_petit_speech_msgs.action import Speech
-import numpy
 from rcl_interfaces.msg import SetParametersResult
 import rclpy
 from rclpy.action import ActionClient
@@ -39,14 +36,24 @@ from rclpy.node import Node
 from rclpy.publisher import Publisher
 from rclpy.task import Future
 # from sbgisen_speech_msgs.action import Speech
-import sounddevice
 from std_msgs.msg import String
 from std_srvs.srv import SetBool
 from std_srvs.srv import Trigger
 import websockets
 from websockets.protocol import State
-import yaml
 
+from cube_petit_chat.nodes.realtime import audio_io
+from cube_petit_chat.nodes.realtime import tools as realtime_tools
+from cube_petit_chat.nodes.realtime.protocol import build_context_message
+from cube_petit_chat.nodes.realtime.protocol import build_session_update
+from cube_petit_chat.nodes.realtime.protocol import build_tool_result_events
+from cube_petit_chat.nodes.realtime.protocol import decode_audio_delta
+from cube_petit_chat.nodes.realtime.protocol import extract_assistant_texts
+from cube_petit_chat.nodes.realtime.protocol import merge_history_into_instructions
+from cube_petit_chat.nodes.realtime.protocol import rate_limit_warnings
+from cube_petit_chat.nodes.realtime.session import RealtimeSession
+from cube_petit_chat.nodes.util.history_logic import format_history_entry
+from cube_petit_chat.nodes.util.history_logic import parse_history_lines
 from cube_petit_chat.nodes.util.name_logic import DEFAULT_ROBOT
 from cube_petit_chat.nodes.util.name_logic import speech_action_server_name
 from cube_petit_chat_msgs.srv import AddContext
@@ -184,6 +191,16 @@ class RealtimeGPTChat(Node):
             else:
                 self.get_logger().info('Realtime conversation is ready')
 
+        self._session = RealtimeSession(url=self.websocket_url,
+                                        headers=self.headers,
+                                        send_queue=self.audio_send_queue,
+                                        is_active=self._is_streaming_active,
+                                        build_session_config=self._build_session_config,
+                                        on_event=self._handle_server_event,
+                                        logger=self.get_logger(),
+                                        on_connect=self._set_websocket_ref,
+                                        on_audio_chunk=self._record_outgoing_audio)
+
         start_enable = self.get_parameter('start_enable').get_parameter_value().bool_value
         if start_enable:
             request = SetBool.Request()
@@ -302,87 +319,40 @@ class RealtimeGPTChat(Node):
 
     async def _send_context(self, request: AddContext.Request) -> None:
         """Send ws."""
-        role_map = {
-            0: 'system',
-            1: 'assistant',
-            2: 'user',
-        }
-        role = role_map.get(request.role, 'user')
-        if role == 'assistant':
-            content_type = 'text'
-        else:
-            content_type = 'input_text'
-
-        content = [{'type': content_type, 'text': request.context}]
-        for img in request.images:
-            img_bytes = bytes(img.data)
-            b64 = base64.b64encode(img_bytes).decode()
-            content.append({
-                'type': 'input_image',
-                'image_url': f'data:image/jpeg;base64,{b64}',
-            })
-
-        if role == 'user':
-            message = {
-                'type': 'response.create',
-                'response': {
-                    'modalities': ['text'],
-                    'input': [{
-                        'type': 'message',
-                        'role': 'user',
-                        'content': content,
-                    }]
-                }
-            }
-        else:
-            message = {
-                'type': 'conversation.item.create',
-                'item': {
-                    'type': 'message',
-                    'role': role,
-                    'content': content,
-                }
-            }
-
+        images = [bytes(img.data) for img in request.images]
+        message = build_context_message(request.role, request.context, images)
         await self._websocket_ref.send(json.dumps(message))
 
     def publish_realtime_status(self) -> None:
         """Comment."""
         self.status_publisher.publish(self.status_msg)
 
+    def _is_streaming_active(self) -> bool:
+        """Return whether audio streaming is currently active."""
+        return self.status_msg.is_active
+
     def save_to_history(self, role: str, content: str) -> None:
         """Append role-content pair to history file."""
         if not self.use_history or not self.history_file:
             return
         try:
+            entry = format_history_entry(role, content, datetime.now().isoformat(timespec='seconds'))
             with open(self.history_file, 'a', encoding='utf-8') as f:
-                json.dump({
-                    'timestamp': datetime.now().isoformat(timespec='seconds'),
-                    'role': role,
-                    'content': content
-                },
-                          f,
-                          ensure_ascii=False)
-                f.write('\n')
+                f.write(entry)
         except Exception as e:
             self.get_logger().warn(f'Failed to save history: {e}')
 
     def load_history(self) -> list:
         """Load conversation history as a list of dicts."""
-        history = []
         if not self.use_history or not self.history_file:
-            return history
+            return []
         try:
             with open(self.history_file, 'r', encoding='utf-8') as f:
                 lines = f.readlines()[-15:]
-                for line in lines:
-                    try:
-                        history.append(json.loads(line.strip()))
-                    except json.JSONDecodeError:
-                        continue
+            return parse_history_lines(lines)
         except FileNotFoundError:
             self.get_logger().info(f'History file {self.history_file} not found. Starting fresh.')
-        return history
+            return []
 
     # ----------------------------------------------------------------------------------##
     # Action Server: Speech
@@ -421,6 +391,31 @@ class RealtimeGPTChat(Node):
         else:
             self.get_logger().info('No active speech goal to cancel.')
 
+    def _send_speech_goal(self, text: str) -> None:
+        """Cancel the previous speech goal (if any) and send a new one."""
+        if self.__action_client.wait_for_server(timeout_sec=5.0):
+            self.__goal_template.text = text
+            if self._speech_goal_handle and not self._speech_goal_handle.is_done:
+                try:
+                    cancel_future = self._speech_goal_handle.cancel_goal_async()
+                    rclpy.spin_until_future_complete(self, cancel_future, timeout_sec=1.0)
+                    self.get_logger().info('Sent cancel request for previous speech goal.')
+
+                    if cancel_future.result() and hasattr(cancel_future.result(), 'return_code'):
+                        if cancel_future.result().return_code == 0:  # 0 = CANCEL_GOAL_ACCEPTED
+                            result_future = self._speech_goal_handle.get_result_async()
+                            self.get_logger().info('Waiting for goal to actually cancel...')
+                            rclpy.spin_until_future_complete(self, result_future, timeout_sec=2.0)
+                            self.get_logger().info('Previous speech goal fully cancelled.')
+                except Exception as e:
+                    self.get_logger().warn(f'Failed to cancel previous speech goal: {e}')
+            self.__goal_template.text = text
+            self.get_logger().info(self.__goal_template.text)
+            future = self.__action_client.send_goal_async(self.__goal_template)
+            future.add_done_callback(self._on_goal_response)
+        else:
+            self.get_logger().error('Speech action server not available.')
+
     # ----------------------------------------------------------------------------------##
     # Streaming Audio Functions
     # ----------------------------------------------------------------------------------##
@@ -437,447 +432,202 @@ class RealtimeGPTChat(Node):
             except Exception as e:
                 self.get_logger().warn(f'Failed to buffer audio from topic: {e}')
 
-    def read_audio_to_queue(self, input_stream: sounddevice.InputStream) -> None:
-        """Read audio data from the input stream and store it in the queue."""
-        while self.status_msg.is_active:
-            try:
-                audio_data, _ = input_stream.read(self.chunk)
-                pcm_bytes = audio_data.tobytes()
-                self.audio_send_queue.put(pcm_bytes)
+    def _publish_mic_chunk(self, pcm_bytes: bytes) -> None:
+        """Publish a chunk of microphone audio read by the input pump."""
+        if self.input_mic_publisher is not None:
+            msg = AudioDataStamped()
+            msg.header.stamp = self.get_clock().now().to_msg()
+            msg.header.frame_id = 'mic'
+            msg.audio.data = pcm_bytes
+            self.input_mic_publisher.publish(msg)
 
-                if self.input_mic_publisher is not None:
-                    msg = AudioDataStamped()
-                    msg.header.stamp = self.get_clock().now().to_msg()
-                    msg.header.frame_id = 'mic'
-                    msg.audio.data = pcm_bytes
-                    self.input_mic_publisher.publish(msg)
-            except Exception as e:
-                self.get_logger().info(f'Error read input stream {e}')
-                break
+    def _record_outgoing_audio(self, audio_data: bytes) -> None:
+        """Buffer outgoing audio while an utterance is being recorded."""
+        if self._recording_speech:
+            self._speech_pcm_buffer.extend(audio_data)
 
-    def play_audio_from_queue(self, output_stream: sounddevice.OutputStream) -> None:
-        """Retrieve and play audio data from the queue."""
-        while self.status_msg.is_active:
-            try:
-                pcm16_audio = self.audio_receive_queue.get(timeout=1)
-                if pcm16_audio:
-                    audio_array = numpy.frombuffer(pcm16_audio, dtype='int16')
-                    output_stream.write(audio_array)
-            except queue.Empty:
-                continue
-            except Exception as e:
-                self.get_logger().info(f'Error writing output stream: {e}')
-                break
+    def _set_websocket_ref(self, websocket: websockets.ClientConnection) -> None:
+        """Keep a reference to the current WebSocket connection."""
+        self._websocket_ref = websocket
 
-    async def send_audio_from_queue(self, websocket: websockets.ClientConnection) -> None:
-        """Send audio data from the queue to the WebSocket server."""
-        while self.status_msg.is_active:
-            audio_data = await asyncio.get_event_loop().run_in_executor(None, self.audio_send_queue.get)
-            if audio_data is None:
-                continue
-            if self._recording_speech:
-                self._speech_pcm_buffer.extend(audio_data)
-            base64_audio = base64.b64encode(audio_data).decode('utf-8')
-            audio_event = {'type': 'input_audio_buffer.append', 'audio': base64_audio}
-            await websocket.send(json.dumps(audio_event))
-            await asyncio.sleep(0)
+    # ----------------------------------------------------------------------------------##
+    # Realtime session wiring
+    # ----------------------------------------------------------------------------------##
 
-    async def receive_audio_to_queue(self, websocket: websockets.ClientConnection) -> None:
-        """Receive audio response from the WebSocket server and store it in the queue."""
-        while self.status_msg.is_active:
-            try:
-                response = await websocket.recv()
-            except websockets.exceptions.ConnectionClosed as e:
-                self.get_logger().error(f'WebSocket connection closed: {e}')
-                break
-            except Exception as e:
-                self.get_logger().error(f'WebSocket recv() failed: {e}')
-                await asyncio.sleep(1)
-                continue
+    def _build_session_config(self) -> dict:
+        """Build the session.update event, loading history and tools."""
+        instructions = self.instructions
+        if self.use_history:
+            history = self.load_history()
+            instructions = merge_history_into_instructions(history, self.instructions)
 
-            try:
-                if response:
+        self.get_logger().info(str(self.use_tools))
+        self.get_logger().info(str(self.tool_names))
+        tools_yaml = []
+        self.tool_functions = {}
+        if self.use_tools and self.tool_names:
 
-                    response_data = json.loads(response)
-                    response_type = response_data.get('type')
-                    self.get_logger().info(response)
-                    # Display the server response in real-time
-                    if response_type == 'response.function_call_arguments.done':
-                        name = response_data.get('name')
-                        call_id = response_data.get('call_id')
-                        args = response_data.get('arguments', '{}')
-                        self.get_logger().info(f'Function call: {name}({args})')
-                        if 'memory' in name:
-                            if self.audio_data_msg is None or len(self.audio_data_msg.audio.data) == 0:
-                                self.get_logger().warn('No audio data available to publish')
-                                return
-                            self.audio_info_publisher.publish(self.audio_info_msg)
-                            self.audio_stamped_publisher.publish(self.audio_data_msg)
-                            self.get_logger().info(
-                                f'Published AudioDataStamped (bytes={len(self._speech_pcm_buffer)})')
-                            self._speech_pcm_buffer.clear()
+            for tool_name in self.tool_names:
+                try:
+                    yaml_path = self.declare_parameter(f'tools.{tool_name}.yaml_path',
+                                                       '').get_parameter_value().string_value
 
-                        if name in self.all_tool_functions:
-                            try:
-                                raw_args = response_data.get('arguments', '{}')
-                                try:
-                                    parsed_args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
-                                except json.JSONDecodeError:
-                                    parsed_args = {}
+                    py_path = self.declare_parameter(f'tools.{tool_name}.python_path',
+                                                     '').get_parameter_value().string_value
 
-                                result = await self.all_tool_functions[name](parsed_args)
+                    self.get_logger().info(f'Looking for tool in: {yaml_path}')
+                    self.get_logger().info(f'Looking for python in: {py_path}')
 
-                                tool_event = {
-                                    'type': 'conversation.item.create',
-                                    'item': {
-                                        'type': 'function_call_output',
-                                        'call_id': call_id,
-                                        'output': json.dumps({'result': result}, ensure_ascii=False)
-                                    }
-                                }
+                    tool_yaml = realtime_tools.load_tool_yaml(yaml_path)
+                    tools_yaml.append(tool_yaml)
+                    self.get_logger().info(f"YAML loaded successfully: {tool_yaml.get('name')}")
 
-                                await websocket.send(json.dumps(tool_event))
+                    tool_function = realtime_tools.load_tool_function(tool_name, py_path)
+                    self.tool_functions[tool_name] = tool_function
+                    self.get_logger().info(f'Loaded tool: {tool_name}')
+                    self.all_tool_functions[tool_name] = tool_function
 
-                                # Ask the model to continue after tool execution
-                                await websocket.send(
-                                    json.dumps({
-                                        'type': 'response.create',
-                                        'response': {
-                                            'modalities': ['text']
-                                        }
-                                    }))
+                except Exception as e:
+                    self.get_logger().error(f'Failed to load tool {tool_name}: {e}')
 
-                            except Exception as e:
-                                self.get_logger().error(f'Error executing tool "{name}": {e}')
+        self.get_logger().info(str(self.use_gpt_tools))
+        self.get_logger().info(str(self.gpt_tool_names))
+        gpt_tools_yaml = []
+        self.gpt_tool_functions = {}
+        if self.use_gpt_tools and self.gpt_tool_names:
+            for tool_name in self.gpt_tool_names:
+                try:
+                    yaml_path = self.declare_parameter(f'gpt_tools.{tool_name}.yaml_path',
+                                                       '').get_parameter_value().string_value
 
-                        # if hasattr(self, 'tool_functions') and name in self.tool_functions:
-                        #     try:
-                        #         raw_args = response_data.get('arguments', '{}')
-                        #         parsed_args = {}
-                        #         try:
-                        #             parsed_args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
-                        #         except json.JSONDecodeError:
-                        #             parsed_args = {}
+                    py_path = self.declare_parameter(f'gpt_tools.{tool_name}.python_path',
+                                                     '').get_parameter_value().string_value
 
-                        #         result = await self.tool_functions[name](parsed_args)
-                        #         tool_output = json.dumps({'result': result}, ensure_ascii=False)
+                    self.get_logger().info(f'Looking for gpt_tool in: {yaml_path}')
+                    self.get_logger().info(f'Looking for python in: {py_path}')
 
-                        #         tool_event = {
-                        #             'type': 'conversation.item.create',
-                        #             'item': {
-                        #                 'type': 'function_call_output',
-                        #                 'call_id': call_id,
-                        #                 'output': tool_output
-                        #             }
-                        #         }
-                        #         await websocket.send(json.dumps(tool_event))
-                        #         await websocket.send(
-                        #             json.dumps({
-                        #                 'type': 'response.create',
-                        #                 'response': {
-                        #                     'modalities': ['text']
-                        #                 }
-                        #             }))
-                        #     except Exception as e:
-                        #         self.get_logger().error(f'Error executing tool {name}: {e}')
+                    tool_yaml = realtime_tools.load_tool_yaml(yaml_path)
+                    gpt_tools_yaml.append(tool_yaml)
+                    self.get_logger().info(f"YAML loaded successfully: {tool_yaml.get('name')}")
 
-                        # if hasattr(self, 'tool_functions') and name in self.gpt_tool_functions:
-                        #     try:
-                        #         raw_args = response_data.get('arguments', '{}')
-                        #         parsed_args = {}
-                        #         try:
-                        #             parsed_args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
-                        #         except json.JSONDecodeError:
-                        #             parsed_args = {}
+                    tool_function = realtime_tools.load_tool_function(tool_name, py_path)
+                    self.gpt_tool_functions[tool_name] = tool_function
+                    self.get_logger().info(f'Loaded tool: {tool_name}')
+                    self.all_tool_functions[tool_name] = tool_function
 
-                        #         result = await self.gpt_tool_functions[name](parsed_args)
-                        #         tool_output = json.dumps({'result': result}, ensure_ascii=False)
+                except Exception as e:
+                    self.get_logger().error(f'Failed to load tool {tool_name}: {e}')
 
-                        #         tool_event = {
-                        #             'type': 'conversation.item.create',
-                        #             'item': {
-                        #                 'type': 'function_call_output',
-                        #                 'call_id': call_id,
-                        #                 'output': tool_output
-                        #             }
-                        #         }
-                        #         await websocket.send(json.dumps(tool_event))
-                        #         await websocket.send(
-                        #             json.dumps({
-                        #                 'type': 'response.create',
-                        #                 'response': {
-                        #                     'modalities': ['text']
-                        #                 }
-                        #             }))
-                        #     except Exception as e:
-                        #         self.get_logger().error(f'Error executing tool {name}: {e}')
-                        #     continue
+        all_tools = []
+        if self.use_tools and self.tool_names:
+            all_tools.extend(tools_yaml)
 
-                    if response_type == 'conversation.item.created':
-                        item = response_data.get('item', {})
-                        if item.get('role') == 'assistant' and item.get('type') == 'message':
-                            contents = item.get('content', [])
-                            for content_block in contents:
-                                if content_block.get('type') == 'text':
-                                    message = content_block.get('text', '')
-                                    text_msg = String()
-                                    text_msg.data = f'assistant: {message}'
-                                    self.text_publisher.publish(text_msg)
-                                    self.save_to_history('assistant', message)
-                                    if self.__action_client.wait_for_server(timeout_sec=5.0):
-                                        self.__goal_template.text = message
-                                        if self._speech_goal_handle and not self._speech_goal_handle.is_done:
-                                            try:
-                                                cancel_future = self._speech_goal_handle.cancel_goal_async()
-                                                rclpy.spin_until_future_complete(self, cancel_future, timeout_sec=1.0)
-                                                self.get_logger().info('Sent cancel request for previous speech goal.')
+        if self.use_gpt_tools and self.gpt_tool_names:
+            all_tools.extend(gpt_tools_yaml)
 
-                                                if cancel_future.result() and hasattr(
-                                                        cancel_future.result(), 'return_code'):
-                                                    if cancel_future.result(
-                                                    ).return_code == 0:  # 0 = CANCEL_GOAL_ACCEPTED
-                                                        result_future = self._speech_goal_handle.get_result_async()
-                                                        self.get_logger().info(
-                                                            'Waiting for goal to actually cancel...')
-                                                        rclpy.spin_until_future_complete(self,
-                                                                                         result_future,
-                                                                                         timeout_sec=2.0)
-                                                        self.get_logger().info('Previous speech goal fully cancelled.')
-                                            except Exception as e:
-                                                self.get_logger().warn(f'Failed to cancel previous speech goal: {e}')
-                                        self.__goal_template.text = message if 'message' in locals(
-                                        ) else self.assistant_text
-                                        self.get_logger().info(self.__goal_template.text)
-                                        future = self.__action_client.send_goal_async(self.__goal_template)
-                                        future.add_done_callback(self._on_goal_response)
-                                    else:
-                                        self.get_logger().error('Speech action server not available.')
-                    if response_type in ('response.audio_transcript.delta', 'response.text.delta'):
-                        self.assistant_text += response_data['delta']
-                    # Retrieve the completion status of the server response
-                    elif response_type in ('response.audio_transcript.done', 'response.text.done'):
+        return build_session_update(instructions, self.use_speech_action, all_tools or None)
 
-                        text_msg = String()
-                        text_msg.data = f'robot: {self.assistant_text}'
-                        self.text_publisher.publish(text_msg)
-                        self.save_to_history('assistant', self.assistant_text)
-                        if response_type == 'response.text.done':
-                            if self.__action_client.wait_for_server(timeout_sec=5.0):
-                                self.__goal_template.text = self.assistant_text
-                                if self._speech_goal_handle and not self._speech_goal_handle.is_done:
-                                    try:
-                                        cancel_future = self._speech_goal_handle.cancel_goal_async()
-                                        rclpy.spin_until_future_complete(self, cancel_future, timeout_sec=1.0)
-                                        self.get_logger().info('Sent cancel request for previous speech goal.')
+    async def _handle_server_event(self, response_data: dict,
+                                   websocket: websockets.ClientConnection) -> Optional[bool]:
+        """Reflect a server event to ROS. Returning True stops the receive loop (existing behavior)."""
+        response_type = response_data.get('type')
+        # Display the server response in real-time
+        if response_type == 'response.function_call_arguments.done':
+            name = response_data.get('name')
+            call_id = response_data.get('call_id')
+            args = response_data.get('arguments', '{}')
+            self.get_logger().info(f'Function call: {name}({args})')
+            if 'memory' in name:
+                if self.audio_data_msg is None or len(self.audio_data_msg.audio.data) == 0:
+                    self.get_logger().warn('No audio data available to publish')
+                    return True
+                self.audio_info_publisher.publish(self.audio_info_msg)
+                self.audio_stamped_publisher.publish(self.audio_data_msg)
+                self.get_logger().info(f'Published AudioDataStamped (bytes={len(self._speech_pcm_buffer)})')
+                self._speech_pcm_buffer.clear()
 
-                                        if cancel_future.result() and hasattr(cancel_future.result(), 'return_code'):
-                                            if cancel_future.result().return_code == 0:  # 0 = CANCEL_GOAL_ACCEPTED
-                                                result_future = self._speech_goal_handle.get_result_async()
-                                                self.get_logger().info('Waiting for goal to actually cancel...')
-                                                rclpy.spin_until_future_complete(self, result_future, timeout_sec=2.0)
-                                                self.get_logger().info('Previous speech goal fully cancelled.')
-                                    except Exception as e:
-                                        self.get_logger().warn(f'Failed to cancel previous speech goal: {e}')
-                                self.__goal_template.text = message if 'message' in locals() else self.assistant_text
-                                self.get_logger().info(self.__goal_template.text)
+            if name in self.all_tool_functions:
+                try:
+                    raw_args = response_data.get('arguments', '{}')
+                    result = await realtime_tools.run_tool(self.all_tool_functions[name], raw_args)
 
-                                future = self.__action_client.send_goal_async(self.__goal_template)
-                                future.add_done_callback(self._on_goal_response)
-                            else:
-                                self.get_logger().error('Speech action server not available.')
-                        self.assistant_text = ''
-                        self._start_waiting_timer()
-                    # Output the transcription of the user's speech
-                    elif response_type == 'conversation.item.input_audio_transcription.completed':
-                        transcript = response_data.get('transcript', '').replace('\n', '')
-                        text_msg = String()
-                        text_msg.data = f'user: {transcript}'
-                        self.text_publisher.publish(text_msg)
-                        self.save_to_history('user', transcript)
-                        if '私は誰' in transcript:
-                            if self.audio_data_msg is None or len(self.audio_data_msg.audio.data) == 0:
-                                self.get_logger().warn('No audio data available to publish')
-                                return
-                            self.audio_info_publisher.publish(self.audio_info_msg)
-                            self.audio_stamped_publisher.publish(self.audio_data_msg)
-                            self.get_logger().info(
-                                f'Published AudioDataStamped (bytes={len(self._speech_pcm_buffer)})')
-                            self._speech_pcm_buffer.clear()
-                    # Retrieve rate limit information
-                    elif response_type == 'rate_limits.updated':
-                        rate_limits = response_data.get('rate_limits', [])
-                        if len(rate_limits) >= 2:
-                            remaining_requests = rate_limits[0].get('remaining', 1)
-                            remaining_tokens = rate_limits[1].get('remaining', 1)
-                            if remaining_requests == 0:
-                                reset_seconds = rate_limits[0].get('reset_seconds', '?')
-                                self.get_logger().warn(f'Rate limit reached. Please wait {reset_seconds} seconds')
-                            if remaining_tokens == 0:
-                                reset_seconds = rate_limits[1].get('reset_seconds', '?')
-                                self.get_logger().warn(f'Rate limit reached. Please wait {reset_seconds} seconds')
-                    # Confirm that the server has recognized the start of this utterance
-                    if 'type' in response_data and response_data['type'] == 'input_audio_buffer.speech_started':
-                        self._cancel_waiting_timer()
-                        self.cancel_speech()
-                        self.get_logger().info('Speech started: begin recording audio')
-                        self._recording_speech = True
-                        self._speech_pcm_buffer.clear()
-                        while not self.audio_receive_queue.empty():
-                            self.audio_receive_queue.get()
-                    if response_data['type'] == 'input_audio_buffer.speech_stopped':
-                        self.get_logger().info('Speech stopped: publish AudioDataStamped')
-                        self._recording_speech = False
-                        if len(self._speech_pcm_buffer) == 0:
-                            self.get_logger().warn('No audio captured for this utterance')
-                            return
-                        human_msg = AudioDataStamped()
-                        human_msg.header.stamp = self.get_clock().now().to_msg()
-                        human_msg.header.frame_id = 'mic'
-                        human_msg.audio.data = bytes(self._speech_pcm_buffer)
-                        self.human_voice_publisher.publish(human_msg)
-                        self.get_logger().info(f'Published human_voice_stamped (bytes={len(self._speech_pcm_buffer)})')
+                    # Return the tool output and ask the model to continue
+                    for event in build_tool_result_events(call_id, result):
+                        await websocket.send(json.dumps(event))
 
-                        self.audio_data_msg.header.stamp = self.get_clock().now().to_msg()
-                        self.audio_data_msg.header.frame_id = 'mic'
-                        self.audio_data_msg.audio.data = bytes(self._speech_pcm_buffer)
-                    if 'type' in response_data and response_data['type'] == 'response.audio.delta':
-                        base64_audio_response = response_data['delta']
-                        if base64_audio_response:
-                            pcm16_audio = base64.b64decode(base64_audio_response)
-                            self.audio_receive_queue.put(pcm16_audio)
-            except Exception as e:
-                self.get_logger().error(f'Error processing websocket message: {e}')
-                continue
+                except Exception as e:
+                    self.get_logger().error(f'Error executing tool "{name}": {e}')
 
-            await asyncio.sleep(0)
+        if response_type == 'conversation.item.created':
+            item = response_data.get('item', {})
+            for message in extract_assistant_texts(item):
+                text_msg = String()
+                text_msg.data = f'assistant: {message}'
+                self.text_publisher.publish(text_msg)
+                self.save_to_history('assistant', message)
+                self._send_speech_goal(message)
+        if response_type in ('response.audio_transcript.delta', 'response.text.delta'):
+            self.assistant_text += response_data['delta']
+        # Retrieve the completion status of the server response
+        elif response_type in ('response.audio_transcript.done', 'response.text.done'):
 
-    async def stream_audio_and_receive_response(self) -> None:
-        """Establish a WebSocket connection and manage audio streaming."""
-        # if self.use_topic is true, add tools from yaml and python data
-        # tools_file_path = '/config/realtime_tools_' + self.tool_names[0] + '.yaml'
-        # python_file_path = '/config/realtime_tools_' + self.tool_names[0] + '.py'
-        # function_name = self.tool_names[0]
+            text_msg = String()
+            text_msg.data = f'robot: {self.assistant_text}'
+            self.text_publisher.publish(text_msg)
+            self.save_to_history('assistant', self.assistant_text)
+            if response_type == 'response.text.done':
+                self._send_speech_goal(self.assistant_text)
+            self.assistant_text = ''
+            self._start_waiting_timer()
+        # Output the transcription of the user's speech
+        elif response_type == 'conversation.item.input_audio_transcription.completed':
+            transcript = response_data.get('transcript', '').replace('\n', '')
+            text_msg = String()
+            text_msg.data = f'user: {transcript}'
+            self.text_publisher.publish(text_msg)
+            self.save_to_history('user', transcript)
+            if '私は誰' in transcript:
+                if self.audio_data_msg is None or len(self.audio_data_msg.audio.data) == 0:
+                    self.get_logger().warn('No audio data available to publish')
+                    return True
+                self.audio_info_publisher.publish(self.audio_info_msg)
+                self.audio_stamped_publisher.publish(self.audio_data_msg)
+                self.get_logger().info(f'Published AudioDataStamped (bytes={len(self._speech_pcm_buffer)})')
+                self._speech_pcm_buffer.clear()
+        # Retrieve rate limit information
+        elif response_type == 'rate_limits.updated':
+            for warning in rate_limit_warnings(response_data.get('rate_limits', [])):
+                self.get_logger().warn(warning)
+        # Confirm that the server has recognized the start of this utterance
+        if 'type' in response_data and response_data['type'] == 'input_audio_buffer.speech_started':
+            self._cancel_waiting_timer()
+            self.cancel_speech()
+            self.get_logger().info('Speech started: begin recording audio')
+            self._recording_speech = True
+            self._speech_pcm_buffer.clear()
+            while not self.audio_receive_queue.empty():
+                self.audio_receive_queue.get()
+        if response_data['type'] == 'input_audio_buffer.speech_stopped':
+            self.get_logger().info('Speech stopped: publish AudioDataStamped')
+            self._recording_speech = False
+            if len(self._speech_pcm_buffer) == 0:
+                self.get_logger().warn('No audio captured for this utterance')
+                return True
+            human_msg = AudioDataStamped()
+            human_msg.header.stamp = self.get_clock().now().to_msg()
+            human_msg.header.frame_id = 'mic'
+            human_msg.audio.data = bytes(self._speech_pcm_buffer)
+            self.human_voice_publisher.publish(human_msg)
+            self.get_logger().info(f'Published human_voice_stamped (bytes={len(self._speech_pcm_buffer)})')
 
-        while self.status_msg.is_active:
-            try:
-                async with websockets.connect(self.websocket_url, additional_headers=self.headers) as websocket:
-                    self._websocket_ref = websocket
-                    update_request = {
-                        'type': 'session.update',
-                        'session': {
-                            'modalities': ['text'] if self.use_speech_action else ['audio', 'text'],
-                            'instructions': self.instructions,
-                            'voice': 'alloy',
-                            'turn_detection': {
-                                'type': 'server_vad',
-                                'threshold': 0.5,
-                            },
-                            'input_audio_transcription': {
-                                'model': 'whisper-1'
-                            }
-                        }
-                    }
-
-                    if self.use_history:
-                        history = self.load_history()
-                        history_text = '\n'.join([f"{item['role']}: {item['content']}" for item in history])
-                        update_request['session']['instructions'] = history_text + '\n' + self.instructions
-
-                    self.get_logger().info(str(self.use_tools))
-                    self.get_logger().info(str(self.tool_names))
-                    tools_yaml = []
-                    self.tool_functions = {}
-                    if self.use_tools and self.tool_names:
-
-                        for tool_name in self.tool_names:
-                            try:
-                                yaml_path = self.declare_parameter(f'tools.{tool_name}.yaml_path',
-                                                                   '').get_parameter_value().string_value
-
-                                py_path = self.declare_parameter(f'tools.{tool_name}.python_path',
-                                                                 '').get_parameter_value().string_value
-
-                                self.get_logger().info(f'Looking for tool in: {yaml_path}')
-                                self.get_logger().info(f'Looking for python in: {py_path}')
-
-                                with open(yaml_path, 'r', encoding='utf-8') as f:
-                                    tool_yaml = yaml.safe_load(f)
-
-                                tools_yaml.append(tool_yaml)
-                                self.get_logger().info(f"YAML loaded successfully: {tool_yaml.get('name')}")
-
-                                spec = importlib.util.spec_from_file_location(tool_name, py_path)
-                                module = importlib.util.module_from_spec(spec)
-                                spec.loader.exec_module(module)
-
-                                self.tool_functions[tool_name] = getattr(module, tool_name)
-                                self.get_logger().info(f'Loaded tool: {tool_name}')
-                                self.all_tool_functions[tool_name] = getattr(module, tool_name)
-
-                            except Exception as e:
-                                self.get_logger().error(f'Failed to load tool {tool_name}: {e}')
-
-                    self.get_logger().info(str(self.use_gpt_tools))
-                    self.get_logger().info(str(self.gpt_tool_names))
-                    gpt_tools_yaml = []
-                    self.gpt_tool_functions = {}
-                    if self.use_gpt_tools and self.gpt_tool_names:
-                        for tool_name in self.gpt_tool_names:
-                            try:
-                                yaml_path = self.declare_parameter(f'gpt_tools.{tool_name}.yaml_path',
-                                                                   '').get_parameter_value().string_value
-
-                                py_path = self.declare_parameter(f'gpt_tools.{tool_name}.python_path',
-                                                                 '').get_parameter_value().string_value
-
-                                self.get_logger().info(f'Looking for gpt_tool in: {yaml_path}')
-                                self.get_logger().info(f'Looking for python in: {py_path}')
-
-                                with open(yaml_path, 'r', encoding='utf-8') as f:
-                                    tool_yaml = yaml.safe_load(f)
-
-                                gpt_tools_yaml.append(tool_yaml)
-                                self.get_logger().info(f"YAML loaded successfully: {tool_yaml.get('name')}")
-
-                                spec = importlib.util.spec_from_file_location(tool_name, py_path)
-                                module = importlib.util.module_from_spec(spec)
-                                spec.loader.exec_module(module)
-
-                                self.gpt_tool_functions[tool_name] = getattr(module, tool_name)
-                                self.get_logger().info(f'Loaded tool: {tool_name}')
-                                self.all_tool_functions[tool_name] = getattr(module, tool_name)
-
-                            except Exception as e:
-                                self.get_logger().error(f'Failed to load tool {tool_name}: {e}')
-
-                    all_tools = []
-                    if self.use_tools and self.tool_names:
-                        all_tools.extend(tools_yaml)
-
-                    if self.use_gpt_tools and self.gpt_tool_names:
-                        all_tools.extend(gpt_tools_yaml)
-
-                    if all_tools:
-                        update_request['session']['tools'] = all_tools
-
-                    await websocket.send(json.dumps(update_request))
-
-                    send_task = asyncio.create_task(self.send_audio_from_queue(websocket))
-                    receive_task = asyncio.create_task(self.receive_audio_to_queue(websocket))
-
-                    pending = await asyncio.wait([send_task, receive_task], return_when=asyncio.FIRST_EXCEPTION)
-                    for task in pending:
-                        if not task.done():
-                            task.cancel()
-
-            except websockets.exceptions.ConnectionClosedOK:
-                self.get_logger().warn('WebSocket connection closed normally (1000 OK). Reconnecting...')
-            except Exception as e:
-                self.get_logger().error(f'WebSocket connection error: {e}')
-
-            if self.status_msg.is_active:
-                self.get_logger().info('Reconnecting to WebSocket in 2 seconds...')
-                await asyncio.sleep(2)
+            self.audio_data_msg.header.stamp = self.get_clock().now().to_msg()
+            self.audio_data_msg.header.frame_id = 'mic'
+            self.audio_data_msg.audio.data = bytes(self._speech_pcm_buffer)
+        if 'type' in response_data and response_data['type'] == 'response.audio.delta':
+            base64_audio_response = response_data['delta']
+            if base64_audio_response:
+                self.audio_receive_queue.put(decode_audio_delta(base64_audio_response))
+        return None
 
     def enable_service_callback(self, request: SetBool.Request, response: SetBool.Response) -> SetBool.Response:
         """Handle service requests to start/stop audio streaming."""
@@ -912,25 +662,25 @@ class RealtimeGPTChat(Node):
 
         # Audio stream from the microphone
         if not self.use_input_topic:
-            self.input_stream = sounddevice.InputStream(samplerate=self.sample_rate,
-                                                        channels=self.channels,
-                                                        dtype='int16',
-                                                        blocksize=self.chunk)
+            self.input_stream = audio_io.open_input_stream(self.sample_rate, self.channels, self.chunk)
             self.input_stream.start()
             self.audio_threads.append(
-                threading.Thread(target=self.read_audio_to_queue, args=(self.input_stream,), daemon=True))
+                threading.Thread(target=audio_io.pump_input_to_queue,
+                                 args=(self.input_stream, self.chunk, self.audio_send_queue, self._is_streaming_active,
+                                       self._publish_mic_chunk, self.get_logger()),
+                                 daemon=True))
         else:
             self.audio_subscription = self.create_subscription(AudioDataStamped, 'audio_stamped', self.audio_callback,
                                                                10)
         # Audio stream received from the API
         if self.use_speech_action:
-            self.output_stream = sounddevice.OutputStream(samplerate=self.sample_rate,
-                                                          channels=self.channels,
-                                                          dtype='int16',
-                                                          blocksize=self.chunk)
+            self.output_stream = audio_io.open_output_stream(self.sample_rate, self.channels, self.chunk)
             self.output_stream.start()
             self.audio_threads.append(
-                threading.Thread(target=self.play_audio_from_queue, args=(self.output_stream,), daemon=True))
+                threading.Thread(target=audio_io.pump_queue_to_output,
+                                 args=(self.output_stream, self.audio_receive_queue, self._is_streaming_active,
+                                       self.get_logger()),
+                                 daemon=True))
 
         # Start audio playback
         for thread in self.audio_threads:
@@ -946,7 +696,7 @@ class RealtimeGPTChat(Node):
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             self._websocket_loop = loop
-            task = loop.create_task(self.stream_audio_and_receive_response())
+            task = loop.create_task(self._session.run())
             try:
                 loop.run_until_complete(task)
             except asyncio.CancelledError:
