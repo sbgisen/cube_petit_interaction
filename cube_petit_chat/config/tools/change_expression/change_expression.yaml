@@ -1,0 +1,18 @@
+# Function calling tool: change the robot's facial expression.
+type: function
+name: change_expression
+description: "「表情を変えて」「怒った顔して」「笑って」など、表情の変更を求められたら実行"
+parameters:
+  type: object
+  properties:
+    expression:
+      type: string
+      description: "変更後の表情。normal=普通, happy=嬉しい, angry=怒り, sad=悲しい, puzzled=困惑"
+      enum:
+        - normal
+        - happy
+        - angry
+        - sad
+        - puzzled
+  required:
+    - expression
