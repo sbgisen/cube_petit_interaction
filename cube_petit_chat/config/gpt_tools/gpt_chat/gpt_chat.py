@@ -19,8 +19,9 @@
 import asyncio
 import json
 
-from cube_petit_chat_msgs.srv import Chat
 import rclpy
+
+from cube_petit_chat_msgs.srv import Chat
 
 
 def call_gpt_api(command: str) -> str:
