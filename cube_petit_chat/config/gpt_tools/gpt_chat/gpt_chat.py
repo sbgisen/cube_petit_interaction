@@ -20,7 +20,6 @@ import asyncio
 import json
 
 from cube_petit_chat_msgs.srv import Chat
-
 import rclpy
 
 

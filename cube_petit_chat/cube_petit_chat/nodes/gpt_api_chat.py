@@ -15,20 +15,20 @@
 # limitations under the License.
 #
 
-from cube_petit_chat_msgs.srv._add_context import AddContext
-from cube_petit_chat_msgs.srv._chat import Chat
-from rclpy.node import Node
-import cv_bridge
-from std_srvs.srv import Trigger
+import pathlib
 import sys
 
+from cube_petit_chat_msgs.srv._add_context import AddContext
+from cube_petit_chat_msgs.srv._chat import Chat
+import cv_bridge
+import numpy as np
 import rclpy
 from rclpy.executors import ExternalShutdownException
-from cube_petit_chat.nodes.util.gpt_client import GPTClient
-
-import pathlib
-import numpy as np
+from rclpy.node import Node
+from std_srvs.srv import Trigger
 from vision_msgs.msg import BoundingBox2DArray
+
+from cube_petit_chat.nodes.util.gpt_client import GPTClient
 
 # -------------------------------
 # Vision Detection Function
