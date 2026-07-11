@@ -34,6 +34,8 @@ setup(
         ('share/' + package_name, ['pyproject.toml']),
         (os.path.join('share', package_name, 'config/tools/horoscope'), glob('config/tools/horoscope/*')),
         (os.path.join('share', package_name, 'config/gpt_tools/gpt_chat'), glob('config/gpt_tools/gpt_chat/*')),
+        (os.path.join('share', package_name,
+                      'config/gpt_tools/infer_object'), glob('config/gpt_tools/infer_object/*')),
         (os.path.join('share', package_name, 'config/tools/weather'), glob('config/tools/weather/*')),
         (os.path.join('share', package_name, 'config/tools/memory_voice'), glob('config/tools/memory_voice/*')),
         (os.path.join('share', package_name, 'config/tools/memory_name'), glob('config/tools/memory_name/*')),
