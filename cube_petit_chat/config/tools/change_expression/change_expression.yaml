@@ -7,12 +7,24 @@ parameters:
   properties:
     expression:
       type: string
-      description: "変更後の表情。normal=普通, happy=嬉しい, angry=怒り, sad=悲しい, puzzled=困惑"
+      description: >-
+        変更後の表情。normal=普通, happy=嬉しい, angry=怒り, sad=悲しい, puzzled=困惑,
+        surprised=驚き, sleepy=眠い, thinking=考え中, excited=わくわく, love=大好き,
+        wink=ウインク, dizzy=目が回る, shy=照れ, curious=興味津々
       enum:
         - normal
         - happy
         - angry
         - sad
         - puzzled
+        - surprised
+        - sleepy
+        - thinking
+        - excited
+        - love
+        - wink
+        - dizzy
+        - shy
+        - curious
   required:
     - expression

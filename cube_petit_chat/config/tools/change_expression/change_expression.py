@@ -32,13 +32,24 @@ from cube_petit_facial_animation_msgs.msg import FaceExpression
 # Absolute topic name (no reliance on namespace resolution; see name_logic.py docstring).
 EXPRESSION_TOPIC = f'/{DEFAULT_ROBOT}/facial_expression/expression_command'
 
-# Valid expressions come from the FaceExpression message constants.
+# The FaceExpression message constants only define 5 expressions, but the facial
+# frontend supports 14 (source of truth: cube_petit_facial_animation/frontend/emote/
+# and the `emotes` map in frontend/main.js). Keep this tuple in sync with the frontend.
 VALID_EXPRESSIONS = (
     FaceExpression.FACE_NORMAL,
     FaceExpression.FACE_HAPPY,
     FaceExpression.FACE_ANGRY,
     FaceExpression.FACE_SAD,
     FaceExpression.FACE_PUZZLED,
+    'surprised',
+    'sleepy',
+    'thinking',
+    'excited',
+    'love',
+    'wink',
+    'dizzy',
+    'shy',
+    'curious',
 )
 
 # Time to wait for the facial-animation subscriber to match with our fresh publisher.
