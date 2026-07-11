@@ -143,9 +143,11 @@ def infer_object_sync(question: str) -> str:
             return 'カメラの映像が取れませんでした。'
 
         chat_client = node.create_client(Chat, 'gpt_chat/chat')
-        if not chat_client.wait_for_service(timeout_sec=5.0):
+        # 15s covers the gpt_api_chat node's startup (uv + venv boot takes >5s), so the
+        # first tool call fired right after launch doesn't race the service into a timeout.
+        if not chat_client.wait_for_service(timeout_sec=15.0):
             node.get_logger().error('gpt_chat/chat service timeout')
-            return 'Service timeout occurred while waiting for GPT services.'
+            return '頭の準備がまだ終わっていないみたい。少し待ってからもう一度聞いてほしい、と伝えてください。'
 
         request = Chat.Request()
         request.text = f'{question}\n{SUPPLEMENTARY_INSTRUCTION}'
