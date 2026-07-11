@@ -24,10 +24,10 @@ import asyncio
 import json
 import time
 
+from cube_petit_facial_animation_msgs.msg import FaceExpression
 import rclpy
 
 from cube_petit_chat.nodes.util.name_logic import DEFAULT_ROBOT
-from cube_petit_facial_animation_msgs.msg import FaceExpression
 
 # Absolute topic name (no reliance on namespace resolution; see name_logic.py docstring).
 EXPRESSION_TOPIC = f'/{DEFAULT_ROBOT}/facial_expression/expression_command'
