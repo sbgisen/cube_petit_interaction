@@ -119,18 +119,16 @@ def launch_setup(context: LaunchContext) -> list:
         gpt_nodes.append(
             GroupAction(actions=[
                 PushRosNamespace(gpt_tool_name),
-                Node(package='sbgisen_conversation',
-                     executable='gpt_conversation',
-                     name='chatter',
+                Node(package='cube_petit_chat',
+                     executable='gpt_api_chat',
+                     name='gpt_chat',
                      output='screen',
                      parameters=[{
                          'api_key': LaunchConfiguration('api_key').perform(context),
                          'model': 'gpt-4.1-mini',
-                         'instructions_file': instruction_path,
+                         'setting_file': instruction_path,
                          'enable_web_search': True,
                          'max_tokens': 1000,
-                         'max_turns': 2,
-                         'structured_output_file': output_py_path,
                      }])
             ]))
     realtime_node = GroupAction(actions=[
