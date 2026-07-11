@@ -40,17 +40,29 @@ VISION_FUNCTION = {
     'parameters': {
         'type': 'object',
         'properties': {
-            'response': {'type': 'string'},
+            'response': {
+                'type': 'string'
+            },
             'detections': {
                 'type': 'array',
                 'items': {
                     'type': 'object',
                     'properties': {
-                        'label': {'type': 'string'},
-                        'x': {'type': 'number'},
-                        'y': {'type': 'number'},
-                        'width': {'type': 'number'},
-                        'height': {'type': 'number'}
+                        'label': {
+                            'type': 'string'
+                        },
+                        'x': {
+                            'type': 'number'
+                        },
+                        'y': {
+                            'type': 'number'
+                        },
+                        'width': {
+                            'type': 'number'
+                        },
+                        'height': {
+                            'type': 'number'
+                        }
                     },
                     'required': ['label', 'x', 'y', 'width', 'height']
                 }
@@ -62,26 +74,22 @@ VISION_FUNCTION = {
 
 
 class GPTChat(Node):
-    ROLE_MAP = {
-            0: 'system',
-            1: 'assistant',
-            2: 'user'
-        }
+    ROLE_MAP = {0: 'system', 1: 'assistant', 2: 'user'}
 
     def __init__(self) -> None:
         """Initialize the class instance."""
         super().__init__('gpt_chat')
         self.declare_parameters(namespace='',
-                                    parameters=[
-                                        ('api_key', ''),
-                                        ('model', 'gpt-4o'),
-                                        ('vision_model', 'gpt-4o'),
-                                        ('max_tokens', 1000),
-                                        ('max_turns', 2),
-                                        ('detail', 'auto'),
-                                        ('setting_file', ''),
-                                        ('enable_web_search', False),
-                                    ])
+                                parameters=[
+                                    ('api_key', ''),
+                                    ('model', 'gpt-4o'),
+                                    ('vision_model', 'gpt-4o'),
+                                    ('max_tokens', 1000),
+                                    ('max_turns', 2),
+                                    ('detail', 'auto'),
+                                    ('setting_file', ''),
+                                    ('enable_web_search', False),
+                                ])
         api_key = self.get_parameter('api_key').get_parameter_value().string_value
         model = self.get_parameter('model').get_parameter_value().string_value
         vision_model = self.get_parameter('vision_model').get_parameter_value().string_value
@@ -116,11 +124,7 @@ class GPTChat(Node):
             if not req.text and not images_np:
                 return resp
 
-            self.client.add_context(
-                role='user',
-                text=req.text if req.text else None,
-                images=images_np
-            )
+            self.client.add_context(role='user', text=req.text if req.text else None, images=images_np)
 
             # 👇 ここが重要
             response = self.client.chat(functions=[VISION_FUNCTION])
@@ -169,6 +173,7 @@ class GPTChat(Node):
             self.get_logger().error(f'Vision chat failed: {e}')
 
         return resp
+
     # ==========================================================
     # Add Context
     # ==========================================================
@@ -186,11 +191,7 @@ class GPTChat(Node):
                 res.boxes = BoundingBox2DArray()
                 return res
 
-            self.client.add_context(
-                role=role_str,
-                text=req.context,
-                images=images_np
-            )
+            self.client.add_context(role=role_str, text=req.context, images=images_np)
 
             res.success = True
 
@@ -234,6 +235,7 @@ class GPTChat(Node):
 # ==========================================================
 # Main
 # ==========================================================
+
 
 def main() -> None:
     rclpy.init()
