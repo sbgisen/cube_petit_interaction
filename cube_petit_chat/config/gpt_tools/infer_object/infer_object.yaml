@@ -1,0 +1,12 @@
+# Function calling tool: infer what the robot's camera is currently looking at.
+type: function
+name: infer_object
+description: "「これ何?」「いま何が見える?」など、目の前の物や見せている物についてカメラで確認して答えてほしいと言われたら実行"
+parameters:
+  type: object
+  properties:
+    question:
+      type: string
+      description: "ユーザーの質問(例:「これは何?」)"
+  required:
+    - question
