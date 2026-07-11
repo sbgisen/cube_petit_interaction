@@ -23,6 +23,7 @@ import sys
 import threading
 from typing import Optional
 
+from action_msgs.msg import GoalStatus
 from audio_common_msgs.msg import AudioDataStamped
 from audio_common_msgs.msg import AudioInfo
 from cube_petit_chat_msgs.msg import RealtimeState
@@ -30,6 +31,7 @@ from cube_petit_speech_msgs.action import Speech
 from rcl_interfaces.msg import SetParametersResult
 import rclpy
 from rclpy.action import ActionClient
+from rclpy.action.client import ClientGoalHandle
 from rclpy.executors import ExternalShutdownException
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
@@ -186,6 +188,9 @@ class RealtimeGPTChat(Node):
             self.__goal_template.speed = 100
             self.__goal_template.volume = 100
             self._speech_goal_handle = None
+            # Set when a barge-in arrives before the goal response; the goal is
+            # cancelled as soon as the handle becomes available.
+            self._cancel_pending = False
 
             self.get_logger().info('Waiting for speech server...')
 
@@ -363,13 +368,20 @@ class RealtimeGPTChat(Node):
     # Action Server: Speech
     # ----------------------------------------------------------------------------------##
 
-    def _on_goal_response(self, future: Future) -> bool:
+    def _on_goal_response(self, future: Future) -> None:
         """Response when goal response is received."""
         goal_handle = future.result()
         if not goal_handle.accepted:
             self.get_logger().warn('Speech goal was rejected.')
             return
         self.get_logger().info('Speech goal accepted.')
+        if self._cancel_pending:
+            # A barge-in arrived before this response; cancel right away.
+            # This runs on an executor thread, so do not block on the future here.
+            self._cancel_pending = False
+            self.get_logger().info('Cancel was requested before goal response; cancelling now.')
+            goal_handle.cancel_goal_async()
+            return
         self._speech_goal_handle = goal_handle
 
         result_future = goal_handle.get_result_async()
@@ -380,40 +392,59 @@ class RealtimeGPTChat(Node):
 
         result_future.add_done_callback(_on_result_done)
 
+    def _goal_is_active(self, goal_handle: ClientGoalHandle) -> bool:
+        """Return True if the goal may still be running on the server.
+
+        Note: ClientGoalHandle has no is_done attribute in Jazzy — checking it
+        raises AttributeError, which silently swallowed every cancel request.
+        Judge by the goal status instead.
+        """
+        return goal_handle.status not in (GoalStatus.STATUS_SUCCEEDED, GoalStatus.STATUS_CANCELED,
+                                          GoalStatus.STATUS_ABORTED)
+
+    def _request_cancel(self, goal_handle: ClientGoalHandle) -> None:
+        """Send a cancel request and wait briefly for the response.
+
+        The node is already spun by the main executor, so it must not be handed to
+        another executor via rclpy.spin_until_future_complete() — doing so detaches
+        the node from the main executor and leaves it orphaned afterwards, killing
+        every ROS callback of this node. Wait on the future with an event instead.
+        """
+        cancel_future = goal_handle.cancel_goal_async()
+        done = threading.Event()
+        cancel_future.add_done_callback(lambda _future: done.set())
+        if done.wait(timeout=1.0):
+            self.get_logger().info('Speech goal cancelled.')
+        else:
+            self.get_logger().warn('Speech goal cancel response timed out (request was still sent).')
+
     def cancel_speech(self) -> None:
         """Cancel the speech goal if active."""
         self.get_logger().info('Attempting to cancel the speech goal...')
         if self._speech_goal_handle:
             try:
-                if not self._speech_goal_handle.is_done:
-                    cancel_future = self._speech_goal_handle.cancel_goal_async()
-                    rclpy.spin_until_future_complete(self, cancel_future, timeout_sec=1.0)
-                    self.get_logger().info('Speech goal cancelled.')
+                if self._goal_is_active(self._speech_goal_handle):
+                    self._request_cancel(self._speech_goal_handle)
             except Exception as e:
                 self.get_logger().warn(f'Cancel failed: {e}')
             finally:
                 self._speech_goal_handle = None
         else:
-            self.get_logger().info('No active speech goal to cancel.')
+            # The goal response may still be in flight; cancel it on arrival.
+            self._cancel_pending = True
+            self.get_logger().info('No goal handle yet; will cancel on goal response if one is in flight.')
 
     def _send_speech_goal(self, text: str) -> None:
         """Cancel the previous speech goal (if any) and send a new one."""
         if self.__action_client.wait_for_server(timeout_sec=5.0):
-            self.__goal_template.text = text
-            if self._speech_goal_handle and not self._speech_goal_handle.is_done:
+            if self._speech_goal_handle and self._goal_is_active(self._speech_goal_handle):
                 try:
-                    cancel_future = self._speech_goal_handle.cancel_goal_async()
-                    rclpy.spin_until_future_complete(self, cancel_future, timeout_sec=1.0)
-                    self.get_logger().info('Sent cancel request for previous speech goal.')
-
-                    if cancel_future.result() and hasattr(cancel_future.result(), 'return_code'):
-                        if cancel_future.result().return_code == 0:  # 0 = CANCEL_GOAL_ACCEPTED
-                            result_future = self._speech_goal_handle.get_result_async()
-                            self.get_logger().info('Waiting for goal to actually cancel...')
-                            rclpy.spin_until_future_complete(self, result_future, timeout_sec=2.0)
-                            self.get_logger().info('Previous speech goal fully cancelled.')
+                    self._request_cancel(self._speech_goal_handle)
                 except Exception as e:
                     self.get_logger().warn(f'Failed to cancel previous speech goal: {e}')
+                finally:
+                    self._speech_goal_handle = None
+            self._cancel_pending = False
             self.__goal_template.text = text
             self.get_logger().info(self.__goal_template.text)
             future = self.__action_client.send_goal_async(self.__goal_template)
