@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2025 SoftBank Corp.
+# Copyright (c) 2026 SoftBank Corp.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,80 +14,55 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""gpt_chat tool: forward a query to the gpt_api_chat node via its Chat service."""
 
 import asyncio
 import json
 
+from cube_petit_chat_msgs.srv import Chat
+
 import rclpy
-from sbgisen_conversation_commander import ConversationCommander
-from sbgisen_conversation_msgs.srv import Chat
 
 
-async def call_gpt_api(command: str) -> str:
-    """
-    Call GPT chat service via ConversationCommander.
+def call_gpt_api(command: str) -> str:
+    """Call the gpt_api_chat node's Chat service (blocking; run in a worker thread).
 
     Parameters
     ----------
     command : str
-        JSON string or dict containing the chat command.
+        Text to send to the GPT chat service.
 
     Returns:
     -------
     str
-        Chat response text.
+        Chat response text (or an error message on failure).
     """
-    set_namespace = 'gpt_chat'
     node = None
-
     try:
-        input_text = command
         if not rclpy.ok():
             rclpy.init(args=None)
         node = rclpy.create_node('call_gpt_chat')
 
-        # service_names = ['clear_chat_history', 'add_chat_context', 'chat']
-        # service_type = [Trigger, AddContext, Chat]
-        chat_client = node.create_client(Chat, set_namespace + '/chat')
+        chat_client = node.create_client(Chat, 'gpt_chat/chat')
         if not chat_client.wait_for_service(timeout_sec=5.0):
-            node.get_logger().error('Chat commander service timeout')
+            node.get_logger().error('gpt_chat/chat service timeout')
             return 'Service timeout occurred while waiting for GPT services.'
-        # for service_name in service_names:
-        #     client = node.create_client(SomeSrvType, full_service_name)
-        #     if not client.wait_for_service(full_service_name, timeout_sec=5.0):
-        #         node.get_logger().error('Chat commander service timeout')
-        #         return 'Service timeout occurred while waiting for GPT services.'
 
-        try:
-            talk_conversation = ConversationCommander(node, True, f'{set_namespace}/clear_chat_history',
-                                                      f'{set_namespace}/add_chat_context', f'{set_namespace}/chat')
-        except Exception:
-            return 'GPT API node is not running.'
+        request = Chat.Request()
+        request.text = command
+        future = chat_client.call_async(request)
+        rclpy.spin_until_future_complete(node, future, timeout_sec=60.0)
+        if not future.done():
+            node.get_logger().error('gpt_chat/chat did not respond in time')
+            return 'GPT chat service did not respond in time.'
 
-        try:
-            node.get_logger().info('Before chat()')
-            loop = asyncio.get_running_loop()
-            resp = await loop.run_in_executor(None, lambda: talk_conversation.chat(text=input_text))
-            node.get_logger().info('After chat()')
-
-            for _ in range(50):
-                rclpy.spin_once(node, timeout_sec=0.0)
-                await asyncio.sleep(0.01)
-            try:
-                resp_data = json.loads(resp)
-                if 'speech_phrases' in resp_data:
-                    text_resp = resp_data['speech_phrases']
-            except json.JSONDecodeError:
-                node.get_logger().warn(f'Response is not JSON. Raw content:\n{resp}')
-                text_resp = resp.replace('\n', '').replace(' ', '').replace('\t', '').replace('*', '')
-
-            node.get_logger().info(f'Use conversation_chat Return: {text_resp}')
-            return text_resp
-        except Exception as e:
-            return f'Error occurred while calling GPT API: {e}'
+        response = future.result()
+        text_resp = response.response.replace('\n', '').replace('*', '')
+        node.get_logger().info(f'gpt_chat service returned: {text_resp}')
+        return text_resp or 'No response was returned from the GPT chat service.'
 
     except Exception as e:
-        return f'Unexpected error occurred: {e}'
+        return f'Error occurred while calling GPT API: {e}'
 
     finally:
         if node is not None:
@@ -95,7 +70,18 @@ async def call_gpt_api(command: str) -> str:
 
 
 async def gpt_chat(arguments: dict) -> str:
+    """Entry point called by the realtime node when the gpt_chat function is invoked.
 
+    Parameters
+    ----------
+    arguments : dict
+        Function-call arguments from the realtime API ({'command': str}).
+
+    Returns:
+    -------
+    str
+        Chat response text to feed back to the realtime session.
+    """
     try:
         args = {}
 
@@ -108,7 +94,10 @@ async def gpt_chat(arguments: dict) -> str:
             args = arguments
 
         command = args.get('command', '')
-        result_text = await call_gpt_api(command)
+        # Run the blocking service call in a worker thread so the realtime
+        # websocket loop keeps receiving events while GPT is thinking.
+        loop = asyncio.get_running_loop()
+        result_text = await loop.run_in_executor(None, call_gpt_api, command)
         return f'{result_text}'
 
     except Exception as e:
