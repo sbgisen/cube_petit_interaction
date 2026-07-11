@@ -135,14 +135,19 @@ def infer_object_sync(question: str) -> str:
     try:
         if not rclpy.ok():
             rclpy.init(args=None)
-        node = rclpy.create_node('infer_object_tool')
+        # use_global_arguments=False: this tool runs inside the realtime node's process,
+        # whose global --ros-args (-r __ns:=<robot>, -r __node:=realtime_gpt_chat) would
+        # otherwise rename this throwaway node and re-namespace relative service names.
+        node = rclpy.create_node('infer_object_tool', use_global_arguments=False)
 
         image_msg = capture_one_image(node, CAMERA_TOPIC, timeout_sec=5.0)
         if image_msg is None:
             node.get_logger().warn(f'No image received from {CAMERA_TOPIC} within timeout')
             return 'カメラの映像が取れませんでした。'
 
-        chat_client = node.create_client(Chat, 'gpt_chat/chat')
+        # Absolute name: the per-tool gpt_api_chat nodes are spawned at the root namespace
+        # by cube_petit_realtime_chat.launch.py regardless of the robot namespace.
+        chat_client = node.create_client(Chat, '/gpt_chat/chat')
         # 15s covers the gpt_api_chat node's startup (uv + venv boot takes >5s), so the
         # first tool call fired right after launch doesn't race the service into a timeout.
         if not chat_client.wait_for_service(timeout_sec=15.0):

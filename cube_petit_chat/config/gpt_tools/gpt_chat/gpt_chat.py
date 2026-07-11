@@ -41,9 +41,14 @@ def call_gpt_api(command: str) -> str:
     try:
         if not rclpy.ok():
             rclpy.init(args=None)
-        node = rclpy.create_node('call_gpt_chat')
+        # use_global_arguments=False: this tool runs inside the realtime node's process,
+        # whose global --ros-args (-r __ns:=<robot>, -r __node:=realtime_gpt_chat) would
+        # otherwise rename this throwaway node and re-namespace relative service names.
+        node = rclpy.create_node('call_gpt_chat', use_global_arguments=False)
 
-        chat_client = node.create_client(Chat, 'gpt_chat/chat')
+        # Absolute name: the per-tool gpt_api_chat nodes are spawned at the root namespace
+        # by cube_petit_realtime_chat.launch.py regardless of the robot namespace.
+        chat_client = node.create_client(Chat, '/gpt_chat/chat')
         # 15s covers the gpt_api_chat node's startup (uv + venv boot takes >5s), so the
         # first tool call fired right after launch doesn't race the service into a timeout.
         if not chat_client.wait_for_service(timeout_sec=15.0):
