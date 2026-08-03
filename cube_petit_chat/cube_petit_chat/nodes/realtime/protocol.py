@@ -117,7 +117,10 @@ def build_context_message(role_id: int, context: str, images: Optional[List[byte
     }
 
 
-def build_session_update(instructions: str, use_speech_action: bool, tools: Optional[List[Dict]] = None) -> Dict:
+def build_session_update(instructions: str,
+                         use_speech_action: bool,
+                         tools: Optional[List[Dict]] = None,
+                         transcription_only: bool = False) -> Dict:
     """session.update イベントを組み立てる (GA shape).
 
     GA では session.type が必須になり、音声関連の設定はすべて session.audio.input /
@@ -131,10 +134,28 @@ def build_session_update(instructions: str, use_speech_action: bool, tools: Opti
         instructions: セッションに適用する指示文。
         use_speech_action: True ならテキストのみ、False なら音声のモダリティ。
         tools: ツール定義のリスト (空/None なら tools キーを付けない)。
+        transcription_only: True なら turn_detection に create_response: false /
+            interrupt_response: false を追加し、人間の発話ごとの自動応答生成を止める。
+            VAD イベントと文字起こし (conversation.item.input_audio_transcription.completed)
+            は引き続き発生する。会話デモの掛け合いモードで、指揮者(conductor)が発話を
+            管理する間にこのノードが勝手に応答してしまわないようにするための設定。
+            デフォルト False で従来挙動を変えない。
 
     Returns:
         session.update のイベント dict。
     """
+    turn_detection: Dict = {
+        'type': 'server_vad',
+        'threshold': 0.5,
+    }
+    if transcription_only:
+        # Keep VAD + transcription running, but never auto-generate (or let VAD
+        # interrupt) a spoken response. See OpenAI Realtime API docs: with both
+        # create_response and interrupt_response false, the model never responds
+        # automatically while VAD/transcription events keep firing.
+        turn_detection['create_response'] = False
+        turn_detection['interrupt_response'] = False
+
     session: Dict = {
         'type': 'realtime',
         'output_modalities': ['text'] if use_speech_action else ['audio'],
@@ -142,10 +163,7 @@ def build_session_update(instructions: str, use_speech_action: bool, tools: Opti
         'audio': {
             'input': {
                 'format': _PCM_AUDIO_FORMAT,
-                'turn_detection': {
-                    'type': 'server_vad',
-                    'threshold': 0.5,
-                },
+                'turn_detection': turn_detection,
                 'transcription': {
                     'model': 'whisper-1'
                 },
