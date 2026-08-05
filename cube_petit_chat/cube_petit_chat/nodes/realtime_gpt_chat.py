@@ -101,6 +101,7 @@ class RealtimeGPTChat(Node):
                                     ('use_input_topic', False),
                                     ('input_topic_name', ''),
                                     ('use_speech_action', False),
+                                    ('transcription_only', False),
                                     ('use_tools', True),
                                     ('use_gpt_tools', True),
                                     ('tool_names', ['']),
@@ -176,6 +177,11 @@ class RealtimeGPTChat(Node):
         self._start_waiting_timer()
 
         self.use_speech_action = self.get_parameter('use_speech_action').get_parameter_value().bool_value
+        self.transcription_only = self.get_parameter('transcription_only').get_parameter_value().bool_value
+        if self.transcription_only:
+            self.get_logger().info(
+                'transcription_only enabled: server_vad create_response/interrupt_response are disabled, '
+                'this node will only publish transcripts and will not speak.')
 
         if self.use_speech_action:
             self.get_logger().info('Use internal speech server for responding')
@@ -561,7 +567,7 @@ class RealtimeGPTChat(Node):
         if self.use_gpt_tools and self.gpt_tool_names:
             all_tools.extend(gpt_tools_yaml)
 
-        return build_session_update(instructions, self.use_speech_action, all_tools or None)
+        return build_session_update(instructions, self.use_speech_action, all_tools or None, self.transcription_only)
 
     async def _handle_server_event(self, response_data: dict,
                                    websocket: websockets.ClientConnection) -> Optional[bool]:

@@ -145,6 +145,30 @@ class TestBuildSessionUpdate:
         assert 'tools' not in build_session_update('i', True, [])['session']
         assert 'tools' not in build_session_update('i', True, None)['session']
 
+    def test_transcription_only_defaults_to_false_and_keeps_prior_behavior(self) -> None:
+        """デフォルトでは transcription_only を渡さない従来呼び出しと同一出力になる (挙動不変)."""
+        with_default = build_session_update('指示', use_speech_action=True)
+        explicit_false = build_session_update('指示', use_speech_action=True, transcription_only=False)
+        assert with_default == explicit_false
+        turn_detection = with_default['session']['audio']['input']['turn_detection']
+        assert turn_detection == {'type': 'server_vad', 'threshold': 0.5}
+        assert 'create_response' not in turn_detection
+        assert 'interrupt_response' not in turn_detection
+
+    def test_transcription_only_true_disables_auto_response(self) -> None:
+        """transcription_only=True で create_response/interrupt_response が false になる.
+
+        VAD (turn_detection.type=server_vad) 自体と文字起こし設定は維持され、ASR としては
+        引き続き動く一方、人間の発話ごとの自動応答生成だけが止まる。
+        """
+        session = build_session_update('指示', use_speech_action=True, transcription_only=True)['session']
+        turn_detection = session['audio']['input']['turn_detection']
+        assert turn_detection['type'] == 'server_vad'
+        assert turn_detection['create_response'] is False
+        assert turn_detection['interrupt_response'] is False
+        # Transcription itself must keep working: ASR is the whole point of this mode.
+        assert session['audio']['input']['transcription'] == {'model': 'whisper-1'}
+
 
 class TestMergeHistoryIntoInstructions:
 

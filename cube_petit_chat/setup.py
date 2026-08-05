@@ -42,7 +42,9 @@ setup(
         (os.path.join('share', package_name, 'config/tools/memory_voice'), glob('config/tools/memory_voice/*')),
         (os.path.join('share', package_name, 'config/tools/memory_name'), glob('config/tools/memory_name/*')),
         (os.path.join('share', package_name, 'config/add_setting_txt'), glob('config/add_setting_txt/*')),
-        (os.path.join('share', package_name, 'launch'), glob('launch/*')),
+        # *.launch.py only: a bare launch/* also matches __pycache__/ (left
+        # behind when a launch file is imported directly) and breaks the build.
+        (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),
         (os.path.join('share', package_name, 'resource', 'history'), glob('resource/history/*.jsonl')),
         (os.path.join('share', package_name, 'config'), glob('config/*.txt')),
 

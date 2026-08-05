@@ -42,6 +42,7 @@ def launch_setup(context: LaunchContext) -> list:
         'max_context_limit': LaunchConfiguration('max_context_limit'),
         'max_tokens': LaunchConfiguration('max_tokens'),
         'use_speech_action': LaunchConfiguration('use_speech_action'),
+        'transcription_only': LaunchConfiguration('transcription_only'),
         'use_input_topic': LaunchConfiguration('use_input_topic'),
         'use_history': LaunchConfiguration('use_history'),
         'history_file': LaunchConfiguration('history_file'),
@@ -176,6 +177,15 @@ def generate_launch_description() -> LaunchDescription:
                               description='Maximum number of tokens to use for each request.'))
 
     args.append(DeclareLaunchArgument('use_speech_action', default_value='true', description='Use sbgisen_speech'))
+
+    args.append(
+        DeclareLaunchArgument(
+            'transcription_only',
+            default_value='false',
+            description=('If true, only publish transcripts (realtime_conversation_content) and never '
+                         'auto-generate/speak a GPT response for each human utterance. Used for the conversation '
+                         'demo "kake-ai" (call-and-response) mode where a conductor manages every robot line and '
+                         'this node must act purely as ASR for the human speaker.')))
 
     args.append(
         DeclareLaunchArgument('setting_file',
